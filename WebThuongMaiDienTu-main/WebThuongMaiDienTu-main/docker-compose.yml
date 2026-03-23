@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  shopmvc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+      - "8443:443"
+    depends_on:
+      - sqlserver
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80;https://+:443
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ShopMVC;User=sa;Password=YourStrong!Passw0rd;
+    networks:
+      - shopnetwork
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong!Passw0rd
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - shopnetwork
+
+volumes:
+  sqlserver_data:
+
+networks:
+  shopnetwork:
+    driver: bridge

@@ -1,0 +1,54 @@
+# Build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.suo
+*.sln.docstates
+
+# Visual Studio
+.vs/
+.vscode/
+
+# Logs
+logs/
+*.log
+
+# Database files
+*.mdf
+*.ldf
+*.bak
+
+# Test results
+TestResults/
+*.trx
+
+# Coverage
+coverage/
+*.coverage
+
+# NuGet
+packages/
+*.nupkg
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Temporary files
+*.tmp
+*.temp

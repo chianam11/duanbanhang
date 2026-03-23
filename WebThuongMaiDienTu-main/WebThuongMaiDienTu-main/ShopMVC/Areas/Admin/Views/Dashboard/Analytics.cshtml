@@ -1,0 +1,376 @@
+@{
+    ViewData["Title"] = "Analytics Dashboard";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 d-inline-block">
+                <i class="fas fa-chart-line"></i> Analytics Dashboard
+            </h1>
+            <button class="btn btn-sm btn-primary float-end" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Key Metrics Row -->
+    <div class="row mb-4" id="metricsContainer">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-primary">
+                <div class="card-body">
+                    <div class="text-primary font-weight-bold text-uppercase mb-1">Today's Revenue</div>
+                    <div class="h3 mb-0" id="todayRevenue">-</div>
+                    <small class="text-muted">vs month average</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-success">
+                <div class="card-body">
+                    <div class="text-success font-weight-bold text-uppercase mb-1">Month Revenue</div>
+                    <div class="h3 mb-0" id="monthRevenue">-</div>
+                    <small class="text-muted">30-day total</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-info">
+                <div class="card-body">
+                    <div class="text-info font-weight-bold text-uppercase mb-1">Total Orders</div>
+                    <div class="h3 mb-0" id="totalOrders">-</div>
+                    <small class="text-muted" id="todayOrdersInfo">-</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-warning">
+                <div class="card-body">
+                    <div class="text-warning font-weight-bold text-uppercase mb-1">Avg Order Value</div>
+                    <div class="h3 mb-0" id="avgOrderValue">-</div>
+                    <small class="text-muted">average spend</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Revenue Trend (Last 30 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Customer Growth</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Total Customers</small>
+                        <div class="h4" id="totalCustomers">-</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">New This Month</small>
+                        <div class="h4 text-info" id="newCustomersMonth">-</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Returning Customers</small>
+                        <div class="h4 text-success" id="returningCustomers">-</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Avg Customer Value</small>
+                        <div class="h4 text-primary" id="avgCustomerValue">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product & Sales Row -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Top 5 Products by Revenue</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0" id="topProductsTable">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Qty Sold</th>
+                                    <th>Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="3" class="text-center text-muted">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Inventory Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Total Products</small>
+                        <div class="h4" id="totalProducts">-</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Active Products</small>
+                        <div class="h5 text-success" id="activeProducts">-</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Low Stock (<10)</small>
+                        <div class="h5 text-warning" id="lowStockProducts">-</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Out of Stock</small>
+                        <div class="h5 text-danger" id="outOfStockProducts">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Customers -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Top 10 Customers</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="topCustomersTable">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Name</th>
+                                    <th>Orders</th>
+                                    <th>Total Spent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="4" class="text-center text-muted">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section styles {
+    <style>
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .border-left-primary {
+            border-left: 4px solid #007bff;
+        }
+
+        .border-left-success {
+            border-left: 4px solid #28a745;
+        }
+
+        .border-left-info {
+            border-left: 4px solid #17a2b8;
+        }
+
+        .border-left-warning {
+            border-left: 4px solid #ffc107;
+        }
+
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 1rem;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .text-primary { color: #007bff; }
+        .text-success { color: #28a745; }
+        .text-info { color: #17a2b8; }
+        .text-warning { color: #ffc107; }
+        .text-danger { color: #dc3545; }
+    </style>
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script>
+        let revenueChart = null;
+
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/api/analytics/overview');
+                const result = await response.json();
+
+                if (result.success) {
+                    const data = result.data;
+                    updateMetrics(data.dashboard);
+                    updateCharts(data.dashboard);
+                    updateTables(data.sales, data.customers);
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showAlert('Error loading dashboard data', 'danger');
+            }
+        }
+
+        function updateMetrics(dashboard) {
+            document.getElementById('todayRevenue').textContent = formatCurrency(dashboard.todayRevenue);
+            document.getElementById('monthRevenue').textContent = formatCurrency(dashboard.monthRevenue);
+            document.getElementById('totalOrders').textContent = dashboard.totalOrders.toLocaleString();
+            document.getElementById('todayOrdersInfo').textContent = `(${dashboard.todayOrders} today)`;
+            document.getElementById('avgOrderValue').textContent = formatCurrency(dashboard.averageOrderValue);
+            document.getElementById('totalCustomers').textContent = dashboard.totalCustomers.toLocaleString();
+            document.getElementById('newCustomersMonth').textContent = dashboard.newCustomersToday;
+            document.getElementById('returningCustomers').textContent = '...';
+        }
+
+        function updateCharts(dashboard) {
+            const ctx = document.getElementById('revenueChart');
+            if (!ctx) return;
+
+            const labels = dashboard.dailyRevenueData.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            const revenue = dashboard.dailyRevenueData.map(d => d.amount);
+            const orders = dashboard.dailyRevenueData.map(d => d.orders);
+
+            if (revenueChart) {
+                revenueChart.data.labels = labels;
+                revenueChart.data.datasets[0].data = revenue;
+                revenueChart.data.datasets[1].data = orders;
+                revenueChart.update();
+            } else {
+                revenueChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Revenue (₫)',
+                                data: revenue,
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                tension: 0.4,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Orders',
+                                data: orders,
+                                borderColor: '#007bff',
+                                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                                tension: 0.4,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: { display: true, text: 'Revenue (₫)' }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: { display: true, text: 'Orders' },
+                                grid: { drawOnChartArea: false }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateTables(sales, customers) {
+            // Top Products
+            const productTbody = document.querySelector('#topProductsTable tbody');
+            productTbody.innerHTML = sales.topProducts.slice(0, 5).map(p => `
+                <tr>
+                    <td><strong>${p.productName}</strong></td>
+                    <td>${p.quantitySold}</td>
+                    <td>${formatCurrency(p.totalRevenue)}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="3" class="text-center text-muted">No data</td></tr>';
+
+            // Top Customers
+            const customerTbody = document.querySelector('#topCustomersTable tbody');
+            customerTbody.innerHTML = customers.topCustomers.map(c => `
+                <tr>
+                    <td>${c.email}</td>
+                    <td>${c.name}</td>
+                    <td><span class="badge bg-primary">${c.orders}</span></td>
+                    <td>${formatCurrency(c.totalSpent)}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="4" class="text-center text-muted">No data</td></tr>';
+
+            // Inventory Status
+            if (sales.topProducts.length > 0) {
+                document.getElementById('totalProducts').textContent = sales.topProducts.length;
+                document.getElementById('activeProducts').textContent = sales.topProducts.length;
+            }
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+                minimumFractionDigits: 0
+            }).format(value);
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+            document.querySelector('.container-fluid').prepend(alertDiv);
+        }
+
+        document.getElementById('refreshBtn')?.addEventListener('click', loadDashboard);
+
+        // Load on page ready
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+        // Auto-refresh every 5 minutes
+        setInterval(loadDashboard, 5 * 60 * 1000);
+    </script>
+}
