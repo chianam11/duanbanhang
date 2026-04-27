@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using ShopMVC.Models;
 using System.Globalization;
@@ -14,7 +15,32 @@ namespace ShopMVC.Data
         {
             using var scope = services.CreateScope();
             var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var env = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
             await ctx.Database.MigrateAsync();
+
+            var webRoot = env.WebRootPath;
+            if (string.IsNullOrWhiteSpace(webRoot))
+                webRoot = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+
+            var productImageRoot = Path.Combine(webRoot, "images", "sp");
+
+            List<string> GetExistingImageUrls(string baseSlug)
+            {
+                if (string.IsNullOrWhiteSpace(baseSlug) || !Directory.Exists(productImageRoot))
+                    return new List<string>();
+
+                return Directory.EnumerateFiles(productImageRoot, $"{baseSlug}-*.jpg")
+                    .OrderBy(Path.GetFileName)
+                    .Select(path => $"/images/sp/{Path.GetFileName(path)}")
+                    .ToList();
+            }
+
+            bool HasImageFile(string url)
+            {
+                if (string.IsNullOrWhiteSpace(url)) return false;
+                var relativePath = url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                return File.Exists(Path.Combine(webRoot, relativePath));
+            }
 
             var roleMgr = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<NguoiDung>>();
@@ -208,15 +234,15 @@ namespace ShopMVC.Data
                 foreach (var c in children)
                 {
                     var baseSlug = Slug(c.Ten);
-                    int count = rnd.Next(2, 4);
-                    for (int i = 1; i <= count; i++)
+                    var existingUrls = GetExistingImageUrls(baseSlug);
+                    for (int i = 0; i < existingUrls.Count; i++)
                     {
                         ctx.AnhSanPhams.Add(new AnhSanPham
                         {
                             IdSanPham = c.Id,
-                            Url = $"/images/sp/{baseSlug}-{i}.jpg",
-                            LaAnhChinh = (i == 1),
-                            ThuTu = i
+                            Url = existingUrls[i],
+                            LaAnhChinh = (i == 0),
+                            ThuTu = i + 1
                         });
                     }
                 }
@@ -352,15 +378,15 @@ namespace ShopMVC.Data
             foreach (var p in noImg)
             {
                 var baseSlug = Slug(p.Ten);
-                int count = rnd.Next(2, 4);
-                for (int i = 1; i <= count; i++)
+                var existingUrls = GetExistingImageUrls(baseSlug);
+                for (int i = 0; i < existingUrls.Count; i++)
                 {
                     newImgs.Add(new AnhSanPham
                     {
                         IdSanPham = p.Id,
-                        Url = $"/images/sp/{baseSlug}-{i}.jpg",
-                        LaAnhChinh = (i == 1),
-                        ThuTu = i
+                        Url = existingUrls[i],
+                        LaAnhChinh = (i == 0),
+                        ThuTu = i + 1
                     });
                 }
             }
@@ -369,6 +395,27 @@ namespace ShopMVC.Data
                 await ctx.AnhSanPhams.AddRangeAsync(newImgs);
                 await ctx.SaveChangesAsync();
             }
+
+            var seededImages = await ctx.AnhSanPhams
+                .Include(a => a.SanPham)
+                .Where(a => a.SanPham != null)
+                .ToListAsync();
+
+            var hasBrokenImage = false;
+            foreach (var image in seededImages)
+            {
+                if (HasImageFile(image.Url)) continue;
+
+                var fallbackUrls = GetExistingImageUrls(Slug(image.SanPham!.Ten));
+                if (fallbackUrls.Count == 0) continue;
+
+                image.Url = fallbackUrls[Math.Min(Math.Max(image.ThuTu - 1, 0), fallbackUrls.Count - 1)];
+                image.LaAnhChinh = image.ThuTu <= 1;
+                hasBrokenImage = true;
+            }
+
+            if (hasBrokenImage)
+                await ctx.SaveChangesAsync();
 
             // ===== 4) Voucher mẫu
             if (!await ctx.Vouchers.AnyAsync())

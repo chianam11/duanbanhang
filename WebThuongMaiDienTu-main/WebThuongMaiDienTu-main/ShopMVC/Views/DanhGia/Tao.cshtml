@@ -101,6 +101,7 @@
     <form asp-action="Tao" method="post" enctype="multipart/form-data">
         <input type="hidden" asp-for="IdSanPham" />
         <input type="hidden" asp-for="IdDonHang" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
         <div class="mb-3">
             <label class="form-label fw-bold">Chất lượng sản phẩm:</label>
@@ -135,11 +136,13 @@
                 </div>
             </div>
             <div class="form-text">Gửi video là tính năng nâng cao, sẽ được bổ sung sau.</div>
+            <span asp-validation-for="FileHinhAnh" class="text-danger"></span>
         </div>
 
         <div class="mb-3">
             <label class="form-label fw-bold">Nhận xét của bạn:</label>
             <textarea asp-for="NoiDung" class="form-control" rows="5" placeholder="Hãy chia sẻ nhận xét cho sản phẩm này bạn nhé!"></textarea>
+            <span asp-validation-for="NoiDung" class="text-danger"></span>
         </div>
 
         <div class="mb-3 form-check form-switch">
@@ -156,6 +159,8 @@
 </div>
 
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const fileInput = document.getElementById('fileHinhAnh');

@@ -1,83 +1,98 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore; // để dùng [Index] & [Precision]
+using Microsoft.EntityFrameworkCore;
 
 namespace ShopMVC.Models
 {
     public enum TrangThaiHienThi { An = 0, Hien = 1 }
 
-    // Index giúp lọc/nhóm nhanh trong admin & user
     [Index(nameof(ParentId))]
     [Index(nameof(IdDanhMuc))]
     [Index(nameof(IdThuongHieu))]
-    public class SanPham
+    public class SanPham : IValidatableObject
     {
         public int Id { get; set; }
 
-        [Required, StringLength(250)]
-        public string Ten { get; set; } = string.Empty;     // Tên mẫu (ở "cha"); ở "con" có thể trùng tên cha
+        [Required(ErrorMessage = "Vui lòng nhập tên sản phẩm.")]
+        [StringLength(250, MinimumLength = 2, ErrorMessage = "Tên sản phẩm phải từ 2 đến 250 ký tự.")]
+        public string Ten { get; set; } = string.Empty;
 
-        [StringLength(120)]
-        public string? DisplaySuffix { get; set; }          // Hậu tố hiển thị của biến thể: "Hồng 128GB", "M", ...
+        [StringLength(120, ErrorMessage = "Hậu tố hiển thị tối đa 120 ký tự.")]
+        public string? DisplaySuffix { get; set; }
 
-        [StringLength(400)]
+        [StringLength(400, ErrorMessage = "Mô tả ngắn tối đa 400 ký tự.")]
         public string? MoTaNgan { get; set; }
 
+        [StringLength(4000, ErrorMessage = "Mô tả chi tiết tối đa 4000 ký tự.")]
         public string? MoTaChiTiet { get; set; }
 
-        // Dùng Precision để map tiền tệ ổn định (SQL Server: decimal(18,2))
-        [Range(0, double.MaxValue)]
+        [Range(typeof(decimal), "0", "9999999999999999", ErrorMessage = "Giá phải lớn hơn hoặc bằng 0.")]
         [Precision(18, 2)]
         public decimal Gia { get; set; }
 
-        [Range(0, double.MaxValue)]
+        [Range(typeof(decimal), "0", "9999999999999999", ErrorMessage = "Giá khuyến mãi phải lớn hơn hoặc bằng 0.")]
         [Precision(18, 2)]
         public decimal? GiaKhuyenMai { get; set; }
 
-        [Range(0, int.MaxValue)]
+        [Range(0, int.MaxValue, ErrorMessage = "Tồn kho phải lớn hơn hoặc bằng 0.")]
         public int TonKho { get; set; }
 
         public bool LaNoiBat { get; set; } = false;
-
         public TrangThaiHienThi TrangThai { get; set; } = TrangThaiHienThi.Hien;
+        public DateTime NgayTao { get; set; }
+        public DateTime NgayCapNhat { get; set; }
 
-        public DateTime NgayTao { get; set; }           // set ở service/controller khi tạo
-        public DateTime NgayCapNhat { get; set; }       // set khi cập nhật
+        public int? ParentId { get; set; }
+        public SanPham? Parent { get; set; }
+        public ICollection<SanPham> Children { get; set; } = new List<SanPham>();
 
-        // Nhóm cha ↔ con
-        public int? ParentId { get; set; }              // null = sản phẩm cha; khác null = biến thể
-        public SanPham? Parent { get; set; }            // navigation về "cha"
-        public ICollection<SanPham> Children { get; set; } = new List<SanPham>(); // các biến thể
+        [StringLength(60, ErrorMessage = "Màu tối đa 60 ký tự.")]
+        public string? Mau { get; set; }
 
-        // Thuộc tính phân biệt biến thể
-        [StringLength(60)]
-        public string? Mau { get; set; }                // "Hồng", "Đen", ...
+        [StringLength(60, ErrorMessage = "Thuộc tính 2 tối đa 60 ký tự.")]
+        public string? ThuocTinh2 { get; set; }
 
-        [StringLength(60)]
-        public string? ThuocTinh2 { get; set; }         // "128GB" / "M" / "42mm"...
+        [StringLength(80, ErrorMessage = "SKU tối đa 80 ký tự.")]
+        public string? SKU { get; set; }
 
-        [StringLength(80)]
-        public string? SKU { get; set; }                // Mã biến thể duy nhất (khuyến nghị Unique ở DB)
+        public bool IsActive { get; set; } = true;
 
-        public bool IsActive { get; set; } = true;      // ẩn/hiện biến thể độc lập với TrangThai
-
-        // FK
+        [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn danh mục.")]
         public int IdDanhMuc { get; set; }
+
         [ForeignKey(nameof(IdDanhMuc))]
         public DanhMuc? DanhMuc { get; set; }
 
+        [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn thương hiệu.")]
         public int IdThuongHieu { get; set; }
+
         [ForeignKey(nameof(IdThuongHieu))]
         public ThuongHieu? ThuongHieu { get; set; }
 
         public ICollection<AnhSanPham> Anhs { get; set; } = new List<AnhSanPham>();
-        public virtual ICollection<ChiTietSanPham> ChiTietSanPhams { get; set; }
-        // Trong class SanPham.cs
-        [NotMapped]
-        public VoucherSanPham? FlashSaleInfo { get; set; } // Chứa thông tin giá giảm, số lượng đã bán...
+        public virtual ICollection<ChiTietSanPham> ChiTietSanPhams { get; set; } = new List<ChiTietSanPham>();
 
-        // Tiện ích hiển thị (không map DB)
+        [NotMapped]
+        public VoucherSanPham? FlashSaleInfo { get; set; }
+
         [NotMapped]
         public string TenDayDu => string.IsNullOrWhiteSpace(DisplaySuffix) ? Ten : $"{Ten} {DisplaySuffix}";
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (GiaKhuyenMai.HasValue && GiaKhuyenMai.Value > Gia)
+            {
+                yield return new ValidationResult(
+                    "Giá khuyến mãi không được lớn hơn giá gốc.",
+                    new[] { nameof(GiaKhuyenMai) });
+            }
+
+            if (ParentId.HasValue && string.IsNullOrWhiteSpace(DisplaySuffix))
+            {
+                yield return new ValidationResult(
+                    "Biến thể nên có hậu tố hiển thị để phân biệt với sản phẩm cha.",
+                    new[] { nameof(DisplaySuffix) });
+            }
+        }
     }
 }

@@ -6,8 +6,15 @@
 }
 
 @{
-    // 1. Lấy danh sách Banner từ Controller gửi sang
-    var banners = ViewBag.BannerSlider as List<ShopMVC.Models.Banner>;
+    var banners = (ViewBag.BannerSlider as List<ShopMVC.Models.Banner> ?? new List<ShopMVC.Models.Banner>())
+        .Where(b => !string.IsNullOrWhiteSpace(b.HinhAnh))
+        .ToList();
+    var defaultBanners = new[]
+    {
+        "/images/banner/anh1.jpg",
+        "/images/banner/anh2.jpg",
+        "/images/banner/anh3.jpg"
+    };
 }
 
 <div class="container my-3">
@@ -17,9 +24,16 @@
             <div id="mainBannerCarousel" class="carousel slide h-100 rounded overflow-hidden shadow-sm position-relative" data-bs-ride="carousel">
 
                 <div class="carousel-indicators">
-                    @if (banners != null && banners.Count > 0)
+                    @if (banners.Count > 0)
                     {
                         for (int i = 0; i < banners.Count; i++)
+                        {
+                            <button type="button" data-bs-target="#mainBannerCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")"></button>
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < defaultBanners.Length; i++)
                         {
                             <button type="button" data-bs-target="#mainBannerCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")"></button>
                         }
@@ -27,24 +41,27 @@
                 </div>
 
                 <div class="carousel-inner h-100">
-                    @if (banners != null && banners.Count > 0)
+                    @if (banners.Count > 0)
                     {
                         for (int i = 0; i < banners.Count; i++)
                         {
                             <div class="carousel-item @(i == 0 ? "active" : "") h-100">
                                 <img src="@banners[i].HinhAnh"
-                                     onerror="this.src='https://via.placeholder.com/800x400?text=Anh+Loi'"
+                                     onerror="this.onerror=null;this.src='@defaultBanners[i % defaultBanners.Length]'"
                                      class="d-block w-100 h-100"
                                      style="object-fit: cover;"
-                                     alt="@banners[i].TenBanner">
+                                     alt="@(string.IsNullOrWhiteSpace(banners[i].TenBanner) ? "Banner khuyến mãi" : banners[i].TenBanner)">
                             </div>
                         }
                     }
                     else
                     {
-                        <div class="carousel-item active h-100">
-                            <img src="https://cf.shopee.vn/file/vn-50009109-c5edc053427181156687060596395563_xxhdpi" class="d-block w-100 h-100" style="object-fit: cover;" alt="Banner Default">
-                        </div>
+                        for (int i = 0; i < defaultBanners.Length; i++)
+                        {
+                            <div class="carousel-item @(i == 0 ? "active" : "") h-100">
+                                <img src="@defaultBanners[i]" class="d-block w-100 h-100" style="object-fit: cover;" alt="Banner khuyến mãi">
+                            </div>
+                        }
                     }
                 </div>
 
@@ -99,14 +116,17 @@
         <div id="cat-scroll" class="cat-scroll">
             @foreach (var dm in danhMucs)
             {
-                var slug = string.IsNullOrWhiteSpace(dm.Slug) ? "placeholder" : dm.Slug;
-                var icon = !string.IsNullOrWhiteSpace(dm.IconUrl) ? dm.IconUrl : $"/images/categories/{slug}.png";
+                var slug = string.IsNullOrWhiteSpace(dm.Slug) ? "abc" : dm.Slug;
+                var icon = !string.IsNullOrWhiteSpace(dm.IconUrl) ? dm.IconUrl : $"/images/categories/{slug}.webp";
 
                 <div class="cat-card">
                     <a asp-controller="SanPham" asp-action="Index" asp-route-idDanhMuc="@dm.Id"
                        class="d-flex flex-column align-items-center gap-2 text-decoration-none text-dark">
                         <div class="cat-circle">
-                            <img src="@icon" alt="@(dm.Ten ?? "Danh mục")" loading="lazy" />
+                            <img src="@icon"
+                                 alt="@(dm.Ten ?? "Danh mục")"
+                                 loading="lazy"
+                                 onerror="this.onerror=null;this.src='/images/categories/abc.webp';" />
                         </div>
                         <div class="small text-center line-clamp-2">@(dm.Ten ?? "")</div>
                     </a>

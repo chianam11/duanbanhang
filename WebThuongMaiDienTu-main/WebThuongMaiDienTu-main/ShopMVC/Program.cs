@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using ShopMVC.Data;
 using ShopMVC.Middlewares;
 using ShopMVC.Models;
@@ -32,7 +33,9 @@ builder.Host.UseSerilog();
 
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+           .ConfigureWarnings(warnings =>
+               warnings.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
 // DÒNG BỊ LỖI ĐÃ BỊ XÓA Ở ĐÂY
 builder.Services.AddSignalR();
@@ -55,6 +58,7 @@ builder.Services
     })
     .AddEntityFrameworkStores<AppDbContext>() // <== ĐĂNG KÝ STORE CHO CẢ USER VÀ ROLE
     .AddDefaultTokenProviders()
+    .AddErrorDescriber<VietnameseIdentityErrorDescriber>()
     .AddDefaultUI();
 
 builder.Services.AddScoped<IOrderService, OrderService>();
@@ -147,6 +151,7 @@ builder.Services.AddSession(opt =>
 });
 
 var app = builder.Build();
+var isDocker = app.Environment.IsEnvironment("Docker");
 
 // Global Exception Handling Middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();
@@ -178,13 +183,16 @@ app.Use(async (context, next) =>
     await next();
 });
 
-if (!app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment() && !isDocker)
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+if (!isDocker)
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 
 app.UseRouting();

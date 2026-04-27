@@ -1,0 +1,30 @@
+{
+  "name": "ShopMVC Dev",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "runServices": [
+    "dev",
+    "sqlserver"
+  ],
+  "remoteEnv": {
+    "ConnectionStrings__DefaultConnection": "Server=sqlserver,1433;Database=ShopMVC;User ID=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True",
+    "ASPNETCORE_ENVIRONMENT": "Development"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens"
+      ],
+      "settings": {
+        "dotnet.defaultSolution": "ShopMVC.sln",
+        "files.eol": "\n"
+      }
+    }
+  },
+  "postCreateCommand": "dotnet restore ShopMVC.sln"
+}

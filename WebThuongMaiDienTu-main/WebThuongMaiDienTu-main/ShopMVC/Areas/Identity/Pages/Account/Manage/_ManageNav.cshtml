@@ -1,0 +1,12 @@
+@{
+    string currentPage = ViewContext.ActionDescriptor.RouteValues["page"] ?? string.Empty;
+    string ActiveClass(string page) => currentPage.Equals(page, System.StringComparison.OrdinalIgnoreCase) ? "active" : "";
+}
+
+<div class="list-group mb-4">
+    <a class="list-group-item list-group-item-action @ActiveClass("/Account/Manage/Index")" asp-page="./Index">Hồ sơ</a>
+    <a class="list-group-item list-group-item-action @ActiveClass("/Account/Manage/Email")" asp-page="./Email">Email</a>
+    <a class="list-group-item list-group-item-action @ActiveClass("/Account/Manage/ChangePassword")" asp-page="./ChangePassword">Mật khẩu</a>
+    <a class="list-group-item list-group-item-action @ActiveClass("/Account/Manage/TwoFactorAuthentication")" asp-page="./TwoFactorAuthentication">Xác thực hai lớp</a>
+    <a class="list-group-item list-group-item-action @ActiveClass("/Account/Manage/PersonalData")" asp-page="./PersonalData">Dữ liệu cá nhân</a>
+</div>

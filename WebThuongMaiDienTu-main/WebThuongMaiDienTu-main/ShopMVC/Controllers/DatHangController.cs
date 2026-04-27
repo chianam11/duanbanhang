@@ -304,6 +304,12 @@ namespace ShopMVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Checkout(CheckoutVM vm)
         {
+            vm.HoTenNhan = vm.HoTenNhan?.Trim() ?? string.Empty;
+            vm.DienThoaiNhan = vm.DienThoaiNhan?.Trim() ?? string.Empty;
+            vm.DiaChiNhan = vm.DiaChiNhan?.Trim() ?? string.Empty;
+            vm.GhiChu = string.IsNullOrWhiteSpace(vm.GhiChu) ? null : vm.GhiChu.Trim();
+            vm.VoucherCode = string.IsNullOrWhiteSpace(vm.VoucherCode) ? null : vm.VoucherCode.Trim().ToUpperInvariant();
+
             // === FIX 2 (Phần C): LỌC GIỎ HÀNG KHI ĐẶT HÀNG ===
             var gioFull = LayGio(); // Lấy giỏ đầy đủ
             if (!gioFull.Any())

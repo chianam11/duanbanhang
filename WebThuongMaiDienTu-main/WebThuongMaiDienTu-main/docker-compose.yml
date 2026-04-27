@@ -1,32 +1,40 @@
-version: '3.8'
-
 services:
   shopmvc:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "8080:80"
-      - "8443:443"
+    container_name: shopmvc-web
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_healthy
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:80;https://+:443
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ShopMVC;User=sa;Password=YourStrong!Passw0rd;
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=ShopMVC;User ID=sa;Password=${SA_PASSWORD:-YourStrong!Passw0rd};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    restart: unless-stopped
     networks:
       - shopnetwork
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: shopmvc-sqlserver
     environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong!Passw0rd
-      - MSSQL_PID=Express
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: ${SA_PASSWORD:-YourStrong!Passw0rd}
+      MSSQL_PID: Express
     ports:
-      - "1433:1433"
+      - "${SQL_PORT:-1433}:1433"
     volumes:
       - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$SA_PASSWORD" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
     networks:
       - shopnetwork
 

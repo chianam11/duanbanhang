@@ -35,7 +35,7 @@
                 <option value="">-- Danh mục --</option>
                 @foreach (var d in Model.DanhMucs)
                 {
-                    <option value="@d.Id" selected="@(Model.IdDanhMuc == d.Id)">@d.Ten</option>
+                    <option value="@d.Id" selected="@(Model.IdDanhMuc == d.Id ? "selected" : null)">@d.Ten</option>
                 }
             </select>
         </div>
@@ -44,7 +44,7 @@
                 <option value="">-- Thương hiệu --</option>
                 @foreach (var th in Model.ThuongHieus)
                 {
-                    <option value="@th.Id" selected="@(Model.IdThuongHieu == th.Id)">@th.Ten</option>
+                    <option value="@th.Id" selected="@(Model.IdThuongHieu == th.Id ? "selected" : null)">@th.Ten</option>
                 }
             </select>
         </div>
@@ -68,9 +68,17 @@
         </div>
     </div>
 
-    <div class="row row-cols-2 row-cols-md-4 g-3">
-        @foreach (var p in Model.Items)
-        {
+    @if (!Model.Items.Any())
+    {
+        <div class="alert alert-warning border-0 shadow-sm rounded-4">
+            Không tìm thấy sản phẩm phù hợp với bộ lọc hiện tại. Bạn hãy thử đổi từ khóa, khoảng giá hoặc danh mục.
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-2 row-cols-md-4 g-3">
+            @foreach (var p in Model.Items)
+            {
             var anh = p.Anhs?.OrderBy(a => a.LaAnhChinh ? 0 : 1).ThenBy(a => a.ThuTu).FirstOrDefault()?.Url ?? "/images/no-image.png";
 
             // 1. KIỂM TRA FLASH SALE
@@ -105,7 +113,7 @@
                 phanTramGiam = (int)((giaGocHienThi - giaHienThi) * 100 / giaGocHienThi);
             }
 
-            <div class="col">
+                <div class="col">
                 @if (isFlashSale)
                 {
                     // ==================================================================
@@ -210,9 +218,10 @@
                         </div>
                     </div>
                 }
-            </div>
-        }
-    </div>
+                </div>
+            }
+        </div>
+    }
 
     @{
         int totalPages = (int)Math.Ceiling(Model.TotalItems / (double)Model.PageSize);

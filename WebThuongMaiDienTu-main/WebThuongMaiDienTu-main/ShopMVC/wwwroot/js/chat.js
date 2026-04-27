@@ -41,6 +41,52 @@
         chatBody.scrollTop = chatBody.scrollHeight;
     }
 
+    function ensureProductContext() {
+        if (window.currentProductId && !document.getElementById("product-context-user")) {
+            const productHtml = `
+                <div class="product-context-user" id="product-context-user">
+                    <img src="${window.currentProductImage}" alt="" />
+                    <div>
+                        <small>Bạn đang hỏi về sản phẩm:</small>
+                        <p>${window.currentProductName}</p>
+                    </div>
+                </div>`;
+            chatBody.insertAdjacentHTML("afterbegin", productHtml);
+        }
+    }
+
+    async function loadHistory() {
+        try {
+            const response = await fetch("/Chat/History", {
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            if (!data || data.success !== true) {
+                return;
+            }
+
+            currentSessionId = data.sessionId || 0;
+            chatBody.innerHTML = "";
+            ensureProductContext();
+
+            if (Array.isArray(data.messages) && data.messages.length > 0) {
+                data.messages.forEach(item => {
+                    const cssClass = item.sender === "Admin" ? "msg-admin" : "msg-user";
+                    appendMessage(item.message, cssClass);
+                });
+            } else {
+                appendMessage("Chào bạn, Shop có thể giúp gì cho bạn?", "msg-admin");
+            }
+        } catch (e) {
+            console.error("Không tải được lịch sử chat:", e);
+        }
+    }
+
     // 5. SỬA HÀM GỬI TIN NHẮN
     async function sendMessage() {
         const message = chatInput.value.trim();
@@ -65,18 +111,8 @@
         const isOpening = chatWindow.style.display !== "flex";
         chatWindow.style.display = isOpening ? "flex" : "none";
 
-        if (isOpening && window.currentProductId) {
-            if (!document.getElementById("product-context-user")) {
-                const productHtml = `
-                    <div class="product-context-user" id="product-context-user">
-                        <img src="${window.currentProductImage}" alt="" />
-                        <div>
-                            <small>Bạn đang hỏi về sản phẩm:</small>
-                            <p>${window.currentProductName}</p>
-                        </div>
-                    </div>`;
-                chatBody.insertAdjacentHTML('afterbegin', productHtml);
-            }
+        if (isOpening) {
+            loadHistory();
         }
     });
 
@@ -92,6 +128,7 @@
         try {
             await connection.start();
             console.log("SignalR Connected.");
+            loadHistory();
         } catch (err) {
             console.log(err);
             setTimeout(start, 5000);

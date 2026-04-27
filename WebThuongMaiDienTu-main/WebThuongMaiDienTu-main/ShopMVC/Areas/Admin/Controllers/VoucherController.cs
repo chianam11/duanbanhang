@@ -150,6 +150,8 @@ namespace ShopMVC.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(VoucherCreateViewModel model)
         {
+            NormalizeVoucherInput(model);
+
             // Check trùng code
             if (await _db.Vouchers.AnyAsync(x => x.Code == model.Code))
             {
@@ -255,6 +257,8 @@ namespace ShopMVC.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateFlashSale(VoucherCreateViewModel model)
         {
+            NormalizeVoucherInput(model);
+
             if (await _db.Vouchers.AnyAsync(x => x.Code == model.Code))
             {
                 ModelState.AddModelError(nameof(model.Code), "Mã này đã tồn tại.");
@@ -333,6 +337,8 @@ namespace ShopMVC.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(VoucherCreateViewModel model)
         {
+            NormalizeVoucherInput(model);
+
             if (await _db.Vouchers.AnyAsync(x => x.Code == model.Code && x.Id != model.Id))
             {
                 ModelState.AddModelError(nameof(model.Code), "Mã này đã tồn tại.");
@@ -419,6 +425,14 @@ namespace ShopMVC.Areas.Admin.Controllers
             ViewBag.Action = "Edit";
 
             return View(model.IsFlashSale ? "CreateFlashSale" : "Create", model);
+        }
+
+        private static void NormalizeVoucherInput(VoucherCreateViewModel model)
+        {
+            model.Code = (model.Code ?? string.Empty).Trim().ToUpperInvariant();
+            model.Ten = (model.Ten ?? string.Empty).Trim();
+            model.SelectedBrandIds = (model.SelectedBrandIds ?? new List<int>()).Distinct().ToList();
+            model.SelectedCategoryIds = (model.SelectedCategoryIds ?? new List<int>()).Distinct().ToList();
         }
 
         // ================== 5. QUẢN LÝ SẢN PHẨM FLASH SALE ==================

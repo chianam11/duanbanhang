@@ -1,184 +1,133 @@
 # ShopMVC
 
-README này dành cho 2 mục đích:
+Repo này đã được chuẩn hóa theo hướng:
 
-1. giúp người mới kéo dự án về máy khác biết chính xác cần cài gì
-2. giúp AI assistant đọc repo và kiểm tra môi trường đúng trước khi chạy
+- chạy nhanh bằng `Docker Compose`
+- phát triển lâu dài bằng `Dev Container`
 
-## Nếu bạn là AI assistant
+Nếu bạn đổi máy thường xuyên, cách này là ổn nhất vì chỉ cần cài:
 
-Khi mở repo này trên máy mới, hãy làm theo thứ tự sau trước khi cố chạy dự án:
+- `Docker Desktop`
+- nếu code bằng VS Code: thêm `VS Code` + extension `Dev Containers`
 
-1. Xác nhận đang mở đúng thư mục chứa `ShopMVC.sln`
-2. Kiểm tra `.NET SDK 9` và `.NET SDK 10`
-3. Kiểm tra SQL Server LocalDB nếu chạy local trên Windows
-4. Nếu không có LocalDB, đề xuất dùng Docker
-5. Chỉ sau đó mới chạy `dotnet restore`, `dotnet build`, `dotnet run`
+## Cách chuẩn nhất
 
-Các lệnh kiểm tra nên chạy:
+Có 2 chế độ dùng:
 
-```powershell
-dotnet --list-sdks
-dotnet --list-runtimes
-sqllocaldb info
-docker --version
-docker compose version
-```
+### 1. Chỉ chạy dự án
 
-Nếu thiếu gì, hãy báo người dùng cài đúng các thành phần trong mục `Cần cài trên máy mới`.
+Dùng `Docker Compose`.
 
-## Tổng quan nhanh
+### 2. Code + chạy + test trong cùng môi trường
 
-- Tên dự án: `ShopMVC`
-- Stack chính: `ASP.NET Core MVC`, `Entity Framework Core`, `ASP.NET Identity`, `SignalR`, `Serilog`
-- App web: target `net9.0`
-- Test project: target `net10.0`
-- Database mặc định khi chạy local: `SQL Server LocalDB`
-- Database khi chạy Docker: `SQL Server 2022 container`
-- App tự chạy migration và seed dữ liệu khi startup qua `DbSeeder.SeedAsync()`
+Dùng `Dev Container`.
 
-## Cần cài trên máy mới
+Đây là lựa chọn nên dùng lâu dài vì không cần cài tay `.NET SDK`, `LocalDB`, `SQL Server` trên từng máy host.
 
-### Bắt buộc nếu muốn chạy đầy đủ solution
+## Chạy nhanh bằng Docker Compose
 
-1. `.NET SDK 9.x`
-2. `.NET SDK 10.x`
-3. `SQL Server LocalDB` hoặc `SQL Server Express`
-
-Lý do:
-
-- project web `ShopMVC` target `net9.0`
-- project test `ShopMVC.Tests` target `net10.0`
-- cấu hình mặc định trong `appsettings.json` dùng `Server=(localdb)\MSSQLLocalDB`
-
-### Bắt buộc nếu muốn chạy bằng Docker
-
-1. `Docker Desktop`
-2. bật `docker compose`
-
-### Khuyến nghị cho dev trên Windows
-
-1. `Visual Studio 2022` với workload `ASP.NET and web development`
-2. hoặc `VS Code` + `C# Dev Kit`
-3. `Git`
-
-## Kiểm tra môi trường sau khi cài
-
-### .NET
+### Bước 1: vào thư mục solution
 
 ```powershell
-dotnet --list-sdks
+cd E:\duanbanhang\WebThuongMaiDienTu-main\WebThuongMaiDienTu-main
 ```
 
-Kỳ vọng có cả dòng `9.x` và `10.x`.
-
-### LocalDB
+### Bước 2: tạo file `.env`
 
 ```powershell
-sqllocaldb info
+Copy-Item .env.example .env
 ```
 
-Kỳ vọng thấy instance `MSSQLLocalDB`.
+Bạn có thể giữ nguyên mặc định, hoặc đổi:
 
-Nếu chưa chạy:
+- `SA_PASSWORD`
+- `APP_PORT`
+- `SQL_PORT`
 
-```powershell
-sqllocaldb start MSSQLLocalDB
+Ví dụ:
+
+```env
+SA_PASSWORD=YourStrong!Passw0rd
+APP_PORT=8080
+SQL_PORT=1433
 ```
 
-### Docker
-
-```powershell
-docker --version
-docker compose version
-```
-
-## Cấu trúc repo quan trọng
-
-```text
-ShopMVC.sln
-ShopMVC/
-  Program.cs
-  appsettings.json
-  Data/
-    AppDbContext.cs
-    DbSeeder.cs
-  Hubs/
-  Controllers/
-  Areas/
-  wwwroot/
-ShopMVC.Tests/
-```
-
-Các file cần đọc đầu tiên:
-
-- `ShopMVC/Program.cs`
-- `ShopMVC/appsettings.json`
-- `ShopMVC/Data/AppDbContext.cs`
-- `ShopMVC/Data/DbSeeder.cs`
-- `docker-compose.yml`
-
-## Chạy local trên Windows
-
-### Bước 1: restore
-
-```powershell
-dotnet restore ShopMVC.sln
-```
-
-### Bước 2: build
-
-```powershell
-dotnet build ShopMVC.sln
-```
-
-### Bước 3: chạy LocalDB
-
-```powershell
-sqllocaldb start MSSQLLocalDB
-```
-
-### Bước 4: chạy web app
-
-```powershell
-dotnet run --project ShopMVC\ShopMVC.csproj --launch-profile http
-```
-
-App mặc định chạy tại:
-
-- `http://localhost:5018`
-
-Swagger UI:
-
-- `http://localhost:5018/api-docs`
-
-## Chạy bằng Docker
+### Bước 3: build và chạy
 
 ```powershell
 docker compose up --build
 ```
 
-Service mặc định:
+### Bước 4: mở trình duyệt
 
-- web app: `http://localhost:8080`
-- SQL Server: `localhost:1433`
+- App: `http://localhost:8080`
+- Swagger: `http://localhost:8080/api-docs`
 
-Lưu ý:
-
-- `docker-compose.yml` đang dùng password mẫu cho SQL Server
-- nếu đổi password thì phải đổi đồng thời trong biến `SA_PASSWORD` và `ConnectionStrings__DefaultConnection`
-
-## Test
+### Dừng dịch vụ
 
 ```powershell
-dotnet test ShopMVC.sln
+docker compose down
 ```
 
-Vì test project target `net10.0`, máy thiếu `.NET SDK 10` sẽ lỗi build test.
+Muốn xóa luôn volume database:
 
-## Tài khoản seed mặc định
+```powershell
+docker compose down -v
+```
 
-Được tạo trong `DbSeeder` và `Program.cs` khi app startup:
+## Phát triển bằng Dev Container
+
+### Yêu cầu
+
+- `Docker Desktop`
+- `VS Code`
+- extension `Dev Containers`
+
+### Cách mở
+
+1. Mở thư mục repo trong VS Code
+2. Chạy lệnh: `Dev Containers: Reopen in Container`
+3. Chờ container build xong
+
+Sau khi vào container:
+
+- workspace nằm ở `/workspace`
+- SQL Server chạy cùng network nội bộ
+- connection string đã được set sẵn cho môi trường dev
+- `dotnet restore ShopMVC.sln` chạy tự động sau khi tạo container
+
+### Chạy app trong Dev Container
+
+Mở terminal trong VS Code và chạy:
+
+```bash
+dotnet run --project ShopMVC/ShopMVC.csproj --launch-profile http
+```
+
+Mặc định app sẽ chạy theo profile trong project. Nếu muốn ép URL rõ ràng:
+
+```bash
+ASPNETCORE_URLS=http://0.0.0.0:5018 dotnet run --project ShopMVC/ShopMVC.csproj --launch-profile http
+```
+
+Nếu cần forward port trong VS Code, forward port tương ứng mà terminal đang log ra.
+
+## Cấu trúc môi trường
+
+### Docker runtime
+
+- `Dockerfile`: build/publish app ASP.NET Core
+- `docker-compose.yml`: chạy `shopmvc` + `sqlserver`
+
+### Dev environment
+
+- `.devcontainer/Dockerfile`: môi trường dev có `.NET SDK 9` và `.NET SDK 10`
+- `.devcontainer/docker-compose.yml`: container dev + SQL Server
+- `.devcontainer/devcontainer.json`: cấu hình cho VS Code
+
+## Tài khoản mặc định
+
+Được seed khi app khởi động:
 
 - Admin: `admin@shopmvc.local / Admin@123`
 - Nhân viên:
@@ -186,101 +135,90 @@ Vì test project target `net10.0`, máy thiếu `.NET SDK 10` sẽ lỗi build t
   - `employee2@shopmvc.local / Employee@123`
   - `employee3@shopmvc.local / Employee@123`
 
-## Những điểm kỹ thuật quan trọng
+## Lệnh hay dùng
 
-- App dùng `UseSqlServer(...)`, không chạy bằng SQLite theo cấu hình mặc định
-- Database migration được gọi tự động lúc startup
-- Dữ liệu mẫu được seed tự động lúc startup
-- SignalR hub được map tại `/chatHub`
-- launch profile HTTP dùng port `5018`
-- Docker map port `8080 -> 80`
-
-## Lỗi thường gặp
-
-### 1. Thiếu .NET 9 hoặc .NET 10
-
-Triệu chứng:
-
-- `The current .NET SDK does not support targeting...`
-- `It was not possible to find any compatible framework version`
-
-Cách xử lý:
-
-- cài `.NET SDK 9.x`
-- cài `.NET SDK 10.x`
-
-### 2. Không có LocalDB
-
-Triệu chứng:
-
-- lỗi kết nối tới `(localdb)\MSSQLLocalDB`
-
-Cách xử lý:
-
-- cài `SQL Server LocalDB`
-- hoặc đổi sang SQL Server/connection string khác
-- hoặc chạy bằng Docker
-
-### 3. Port 5018 đã bị chiếm
-
-Triệu chứng:
-
-- `Failed to bind to address http://127.0.0.1:5018`
-
-Cách xử lý:
+### Docker Compose
 
 ```powershell
-netstat -ano | findstr :5018
-taskkill /PID <PID> /F
+docker compose up --build
+docker compose down
+docker compose down -v
+docker compose logs -f shopmvc
+docker compose logs -f sqlserver
 ```
 
-Hoặc đổi port trong:
+### Trong Dev Container
 
-- `ShopMVC/Properties/launchSettings.json`
-
-### 4. Build được nhưng web không lên
-
-Hãy kiểm tra:
-
-1. LocalDB đã start chưa
-2. connection string trong `ShopMVC/appsettings.json` có đúng không
-3. log trong thư mục `ShopMVC/logs/`
-
-### 5. Docker lên nhưng app không kết nối được DB
-
-Hãy kiểm tra:
-
-1. container `sqlserver` đã healthy chưa
-2. password trong `docker-compose.yml` có khớp không
-3. app đang dùng đúng connection string `Server=sqlserver;...`
-
-## Lệnh nhanh nên dùng
-
-```powershell
+```bash
 dotnet restore ShopMVC.sln
 dotnet build ShopMVC.sln
-dotnet run --project ShopMVC\ShopMVC.csproj --launch-profile http
 dotnet test ShopMVC.sln
-sqllocaldb start MSSQLLocalDB
+dotnet run --project ShopMVC/ShopMVC.csproj --launch-profile http
+```
+
+## Ghi chú kỹ thuật
+
+- App runtime target `net9.0`
+- Test project target `net10.0`
+- Dev container đã cài cả SDK 9 và 10 để không lệch môi trường
+- SQL Server trong Docker dùng volume riêng để giữ dữ liệu
+- App tự chạy migration/seed khi startup qua `DbSeeder.SeedAsync()`
+
+## Khi nào nên dùng cách nào
+
+### Dùng Docker Compose nếu:
+
+- bạn chỉ cần chạy dự án
+- bạn không muốn cài SDK trên máy
+
+### Dùng Dev Container nếu:
+
+- bạn code thường xuyên
+- bạn muốn môi trường dev giống nhau trên mọi máy
+- bạn muốn giảm tối đa lỗi kiểu “máy này chạy, máy kia lỗi”
+
+## Nếu Docker báo lỗi
+
+### Port bị chiếm
+
+Đổi trong `.env`:
+
+```env
+APP_PORT=8081
+SQL_PORT=1434
+```
+
+Sau đó chạy lại:
+
+```powershell
 docker compose up --build
 ```
 
-## Gợi ý workflow cho AI trên máy mới
+### SQL không lên
 
-Nếu AI cần hỗ trợ bootstrap repo này, trình tự tốt nhất là:
+Xem log:
 
-1. đọc `README.md`
-2. kiểm tra `dotnet --list-sdks`
-3. kiểm tra `sqllocaldb info`
-4. đọc `ShopMVC/Program.cs`
-5. đọc `ShopMVC/appsettings.json`
-6. chạy `dotnet restore`
-7. chạy `dotnet build`
-8. chạy app hoặc `docker compose up`
+```powershell
+docker compose logs -f sqlserver
+```
 
-## Tài liệu liên quan
+### App không lên dù SQL đã chạy
 
-- `DEVELOPMENT_GUIDE.md`
-- `FEATURES_SUMMARY.md`
-- `QUICK_START.md`
-- `DEPLOYMENT.md`
+Xem log:
+
+```powershell
+docker compose logs -f shopmvc
+```
+
+## Kết luận
+
+Nếu chỉ cần dùng:
+
+```powershell
+docker compose up --build
+```
+
+Nếu muốn làm việc lâu dài:
+
+- mở repo bằng `Dev Container`
+- code, build, test ngay trong container

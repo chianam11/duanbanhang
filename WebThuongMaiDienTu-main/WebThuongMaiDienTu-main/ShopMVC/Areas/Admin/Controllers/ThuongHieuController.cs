@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ShopMVC.Data;
 using ShopMVC.Models;
@@ -10,7 +10,6 @@ namespace ShopMVC.Areas.Admin.Controllers
         private readonly AppDbContext _db;
         public ThuongHieuController(AppDbContext db) => _db = db;
 
-        // INDEX
         public async Task<IActionResult> Index(int page = 1, int pageSize = 12, string? q = null, string sort = "name_asc")
         {
             if (page < 1) page = 1;
@@ -52,68 +51,58 @@ namespace ShopMVC.Areas.Admin.Controllers
             return View(items);
         }
 
-        // CREATE GET
         public IActionResult Create() => View(new ThuongHieu { HienThi = true });
 
-        // CREATE POST
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ThuongHieu m)
         {
+            NormalizeBrandInput(m);
+
             if (!ModelState.IsValid) return View(m);
 
-            // --- CHECK TRÙNG ---
-            string name = (m.Ten ?? "").Trim().ToLower();
-
-            bool existed = await _db.ThuongHieus
-                .AnyAsync(x => x.Ten.ToLower() == name);
+            string name = m.Ten.ToLowerInvariant();
+            bool existed = await _db.ThuongHieus.AnyAsync(x => x.Ten.ToLower() == name);
 
             if (existed)
             {
-                ModelState.AddModelError("Ten", "Tên thương hiệu đã tồn tại.");
+                ModelState.AddModelError(nameof(m.Ten), "Tên thương hiệu đã tồn tại.");
                 return View(m);
             }
-            // ---------------------
 
             _db.Add(m);
             await _db.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        // EDIT GET
         public async Task<IActionResult> Edit(int id)
         {
             var th = await _db.ThuongHieus.FindAsync(id);
             return th == null ? NotFound() : View(th);
         }
 
-        // EDIT POST
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ThuongHieu m)
         {
+            NormalizeBrandInput(m);
+
             if (!ModelState.IsValid) return View(m);
 
-            // --- CHECK TRÙNG (trừ chính nó) ---
-            string name = (m.Ten ?? "").Trim().ToLower();
-
-            bool existed = await _db.ThuongHieus
-                .AnyAsync(x =>
-                    x.Id != m.Id &&
-                    x.Ten.ToLower() == name
-                );
+            string name = m.Ten.ToLowerInvariant();
+            bool existed = await _db.ThuongHieus.AnyAsync(x => x.Id != m.Id && x.Ten.ToLower() == name);
 
             if (existed)
             {
-                ModelState.AddModelError("Ten", "Tên thương hiệu đã tồn tại.");
+                ModelState.AddModelError(nameof(m.Ten), "Tên thương hiệu đã tồn tại.");
                 return View(m);
             }
-            // ------------------------------------
 
             _db.Update(m);
             await _db.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        // DELETE
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -144,6 +133,13 @@ namespace ShopMVC.Areas.Admin.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private static void NormalizeBrandInput(ThuongHieu model)
+        {
+            model.Ten = model.Ten?.Trim() ?? string.Empty;
+            model.Slug = string.IsNullOrWhiteSpace(model.Slug) ? null : model.Slug.Trim().ToLowerInvariant();
+            model.MoTa = string.IsNullOrWhiteSpace(model.MoTa) ? null : model.MoTa.Trim();
         }
     }
 }

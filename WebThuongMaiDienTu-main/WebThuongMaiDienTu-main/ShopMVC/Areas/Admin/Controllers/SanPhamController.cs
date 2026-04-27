@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ShopMVC.Data;
+using ShopMVC.Helpers;
 using ShopMVC.Models;
 
 namespace ShopMVC.Areas.Admin.Controllers
@@ -12,13 +13,11 @@ namespace ShopMVC.Areas.Admin.Controllers
         private readonly IWebHostEnvironment _env;
         public SanPhamController(AppDbContext db, IWebHostEnvironment env) { _db = db; _env = env; }
 
-        // ===== Select lists (DM, TH, Cha) =====
         private void LoadSelects()
         {
             ViewBag.DanhMuc = new SelectList(_db.DanhMucs.OrderBy(x => x.ThuTu), "Id", "Ten");
             ViewBag.ThuongHieu = new SelectList(_db.ThuongHieus.OrderBy(x => x.Ten), "Id", "Ten");
 
-            // Cha = sản phẩm không có ParentId
             ViewBag.Parents = new SelectList(
                 _db.SanPhams
                    .Where(p => p.ParentId == null)
@@ -28,7 +27,6 @@ namespace ShopMVC.Areas.Admin.Controllers
             );
         }
 
-        // ===== Danh sách =====
         public async Task<IActionResult> Index(int page = 1, int pageSize = 15, bool includeVariants = false)
         {
             if (page < 1) page = 1;
@@ -37,16 +35,14 @@ namespace ShopMVC.Areas.Admin.Controllers
             IQueryable<SanPham> q = _db.SanPhams.AsNoTracking();
 
             if (!includeVariants)
-                q = q.Where(p => p.ParentId == null)
-                     .Include(p => p.Children);
+                q = q.Where(p => p.ParentId == null).Include(p => p.Children);
 
             q = q
                 .Include(p => p.Anhs)
-                .Include(p => p.Parent)               // thêm Parent
-                    .ThenInclude(pa => pa.Anhs)       // và ảnh của Parent
+                .Include(p => p.Parent)
+                    .ThenInclude(pa => pa.Anhs)
                 .Include(p => p.DanhMuc)
                 .Include(p => p.ThuongHieu);
-
 
             int total = await q.CountAsync();
             int totalPages = (int)Math.Ceiling(total / (double)pageSize);
@@ -68,8 +64,6 @@ namespace ShopMVC.Areas.Admin.Controllers
             return View(list);
         }
 
-
-        // ===== Create =====
         public IActionResult Create()
         {
             LoadSelects();
@@ -80,7 +74,9 @@ namespace ShopMVC.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(SanPham m, List<IFormFile>? files)
         {
-            // Validate ParentId (không tự trỏ vào mình & phải tồn tại)
+            NormalizeProductInput(m);
+            ValidateProductFiles(files);
+
             if (m.ParentId.HasValue)
             {
                 var parentExists = await _db.SanPhams.AnyAsync(x => x.Id == m.ParentId && x.ParentId == null);
@@ -90,7 +86,8 @@ namespace ShopMVC.Areas.Admin.Controllers
 
             if (!ModelState.IsValid)
             {
-                LoadSelects(); return View(m);
+                LoadSelects();
+                return View(m);
             }
 
             m.NgayTao = m.NgayCapNhat = DateTime.UtcNow;
@@ -102,7 +99,6 @@ namespace ShopMVC.Areas.Admin.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ===== Edit =====
         public async Task<IActionResult> Edit(int id)
         {
             LoadSelects();
@@ -118,12 +114,14 @@ namespace ShopMVC.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(SanPham m, List<IFormFile>? files)
         {
+            NormalizeProductInput(m);
+            ValidateProductFiles(files);
+
             if (m.ParentId == m.Id) m.ParentId = null;
 
             if (m.ParentId.HasValue)
             {
-                var parent = await _db.SanPhams
-                    .FirstOrDefaultAsync(x => x.Id == m.ParentId && x.ParentId == null);
+                var parent = await _db.SanPhams.FirstOrDefaultAsync(x => x.Id == m.ParentId && x.ParentId == null);
                 if (parent == null)
                     ModelState.AddModelError(nameof(m.ParentId), "Nhóm (cha) không hợp lệ hoặc không tồn tại.");
             }
@@ -138,16 +136,12 @@ namespace ShopMVC.Areas.Admin.Controllers
 
             _db.Update(m);
             await _db.SaveChangesAsync();
-
             await SaveImagesAsync(m.Id, files);
 
-            // 👇 đây là 2 dòng quan trọng
             TempData["toast"] = "Đã lưu sản phẩm thành công.";
             return RedirectToAction(nameof(Index));
         }
 
-
-        // ===== Delete sản phẩm =====
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Xoa(int id)
@@ -159,14 +153,12 @@ namespace ShopMVC.Areas.Admin.Controllers
 
             if (sp == null) return RedirectToAction(nameof(Index));
 
-            // Nếu là cha và còn biến thể → chặn xoá (tránh xoá nhầm)
             if (sp.ParentId == null && sp.Children.Any())
             {
                 TempData["Err"] = "Không thể xoá sản phẩm CHA khi vẫn còn biến thể. Hãy xoá/di chuyển các biến thể trước.";
                 return RedirectToAction(nameof(Index));
             }
 
-            // Xoá ảnh file vật lý
             foreach (var a in sp.Anhs) TryDeleteFile(a.Url);
 
             _db.SanPhams.Remove(sp);
@@ -176,7 +168,6 @@ namespace ShopMVC.Areas.Admin.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ===== Ảnh: legacy (giữ tương thích) =====
         [HttpPost]
         public async Task<IActionResult> XoaAnh(int id)
         {
@@ -184,7 +175,8 @@ namespace ShopMVC.Areas.Admin.Controllers
             if (a != null)
             {
                 TryDeleteFile(a.Url);
-                _db.AnhSanPhams.Remove(a); await _db.SaveChangesAsync();
+                _db.AnhSanPhams.Remove(a);
+                await _db.SaveChangesAsync();
             }
             return Redirect(Request.Headers["Referer"].ToString());
         }
@@ -201,7 +193,6 @@ namespace ShopMVC.Areas.Admin.Controllers
             return Redirect(Request.Headers["Referer"].ToString());
         }
 
-        // ===== Trang quản ảnh =====
         public async Task<IActionResult> Images(int id)
         {
             var p = await _db.SanPhams
@@ -211,11 +202,17 @@ namespace ShopMVC.Areas.Admin.Controllers
             return View(p);
         }
 
-        // Upload nhiều ảnh (đã chuẩn hoá 1 đường dẫn)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UploadImages(int id, List<IFormFile> files)
         {
+            ValidateProductFiles(files);
+            if (!ModelState.IsValid)
+            {
+                TempData["Err"] = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage ?? "Ảnh tải lên không hợp lệ.";
+                return RedirectToAction(nameof(Images), new { id });
+            }
+
             var p = await _db.SanPhams.Include(x => x.Anhs).FirstOrDefaultAsync(x => x.Id == id);
             if (p == null) return NotFound();
 
@@ -227,9 +224,6 @@ namespace ShopMVC.Areas.Admin.Controllers
             foreach (var f in files.Where(f => f?.Length > 0))
             {
                 var ext = Path.GetExtension(f.FileName).ToLowerInvariant();
-                var ok = ext is ".jpg" or ".jpeg" or ".png" or ".webp";
-                if (!ok) continue;
-
                 var fileName = $"{Guid.NewGuid():N}{ext}";
                 var savePath = Path.Combine(uploadRoot, fileName);
                 await using (var stream = System.IO.File.Create(savePath))
@@ -249,7 +243,6 @@ namespace ShopMVC.Areas.Admin.Controllers
             return RedirectToAction(nameof(Images), new { id });
         }
 
-        // Đặt ảnh chính
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SetMainImage(int id, int imageId)
@@ -257,13 +250,12 @@ namespace ShopMVC.Areas.Admin.Controllers
             var p = await _db.SanPhams.Include(x => x.Anhs).FirstOrDefaultAsync(x => x.Id == id);
             if (p == null) return NotFound();
 
-            foreach (var a in p.Anhs) a.LaAnhChinh = (a.Id == imageId);
+            foreach (var a in p.Anhs) a.LaAnhChinh = a.Id == imageId;
             await _db.SaveChangesAsync();
 
             return RedirectToAction(nameof(Images), new { id });
         }
 
-        // Xóa ảnh (kèm file)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteImage(int id, int imageId)
@@ -287,14 +279,11 @@ namespace ShopMVC.Areas.Admin.Controllers
             return RedirectToAction(nameof(Images), new { id });
         }
 
-        // Sắp xếp ảnh
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MoveImage(int id, int imageId, string dir)
         {
-            var list = await _db.AnhSanPhams
-                .Where(a => a.IdSanPham == id)
-                .OrderBy(a => a.ThuTu).ToListAsync();
+            var list = await _db.AnhSanPhams.Where(a => a.IdSanPham == id).OrderBy(a => a.ThuTu).ToListAsync();
 
             var idx = list.FindIndex(a => a.Id == imageId);
             if (idx == -1) return RedirectToAction(nameof(Images), new { id });
@@ -308,27 +297,22 @@ namespace ShopMVC.Areas.Admin.Controllers
             return RedirectToAction(nameof(Images), new { id });
         }
 
-        // ===== Helpers =====
         private async Task SaveImagesAsync(int spId, List<IFormFile>? files)
         {
             if (files == null || files.Count == 0) return;
 
-            // Chuẩn hoá: chỉ dùng /uploads/products
             var dir = Path.Combine(_env.WebRootPath, "uploads", "products");
             Directory.CreateDirectory(dir);
 
             bool first = !await _db.AnhSanPhams.AnyAsync(x => x.IdSanPham == spId);
             int order = (await _db.AnhSanPhams
-    .Where(x => x.IdSanPham == spId)
-    .Select(x => (int?)x.ThuTu)
-    .MaxAsync()) ?? 0;
+                .Where(x => x.IdSanPham == spId)
+                .Select(x => (int?)x.ThuTu)
+                .MaxAsync()) ?? 0;
 
             foreach (var f in files.Where(f => f?.Length > 0))
             {
                 var ext = Path.GetExtension(f.FileName).ToLowerInvariant();
-                var ok = ext is ".jpg" or ".jpeg" or ".png" or ".webp";
-                if (!ok) continue;
-
                 var fileName = $"{Guid.NewGuid():N}{ext}";
                 var savePath = Path.Combine(dir, fileName);
                 await using (var stream = System.IO.File.Create(savePath))
@@ -339,7 +323,7 @@ namespace ShopMVC.Areas.Admin.Controllers
                 {
                     IdSanPham = spId,
                     Url = url,
-                    LaAnhChinh = first,   // ảnh đầu tiên là ảnh chính
+                    LaAnhChinh = first,
                     ThuTu = ++order
                 });
                 first = false;
@@ -352,6 +336,31 @@ namespace ShopMVC.Areas.Admin.Controllers
             if (string.IsNullOrWhiteSpace(url)) return;
             var full = Path.Combine(_env.WebRootPath, url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
             if (System.IO.File.Exists(full)) System.IO.File.Delete(full);
+        }
+
+        private static void NormalizeProductInput(SanPham model)
+        {
+            model.Ten = model.Ten?.Trim() ?? string.Empty;
+            model.DisplaySuffix = string.IsNullOrWhiteSpace(model.DisplaySuffix) ? null : model.DisplaySuffix.Trim();
+            model.MoTaNgan = string.IsNullOrWhiteSpace(model.MoTaNgan) ? null : model.MoTaNgan.Trim();
+            model.MoTaChiTiet = string.IsNullOrWhiteSpace(model.MoTaChiTiet) ? null : model.MoTaChiTiet.Trim();
+            model.Mau = string.IsNullOrWhiteSpace(model.Mau) ? null : model.Mau.Trim();
+            model.ThuocTinh2 = string.IsNullOrWhiteSpace(model.ThuocTinh2) ? null : model.ThuocTinh2.Trim();
+            model.SKU = string.IsNullOrWhiteSpace(model.SKU) ? null : model.SKU.Trim().ToUpperInvariant();
+        }
+
+        private void ValidateProductFiles(List<IFormFile>? files)
+        {
+            if (files == null || files.Count == 0) return;
+
+            foreach (var file in files.Where(f => f != null))
+            {
+                if (!FileUploadValidation.IsValidImage(file, out var error, maxSizeInMb: 5))
+                {
+                    ModelState.AddModelError("files", error);
+                    break;
+                }
+            }
         }
     }
 }

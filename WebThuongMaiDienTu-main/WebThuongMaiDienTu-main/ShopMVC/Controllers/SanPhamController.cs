@@ -17,79 +17,103 @@ namespace ShopMVC.Controllers
              string? tuKhoa, string? sapXep,
              int page = 1, int pageSize = 12)
         {
-            // 1) Base query + Include cho thẻ/ảnh
-            var baseQuery = _db.SanPhams
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 12;
+
+            var activeFlashSale = await _db.Vouchers
+                .Where(v => v.IsFlashSale && v.IsActive && DateTime.Now >= v.NgayBatDau && DateTime.Now <= v.NgayHetHan)
+                .OrderByDescending(v => v.NgayBatDau)
+                .FirstOrDefaultAsync();
+
+            var flashSaleMap = activeFlashSale == null
+                ? new Dictionary<int, VoucherSanPham>()
+                : await _db.VoucherSanPhams
+                    .Where(vp => vp.VoucherId == activeFlashSale.Id)
+                    .ToDictionaryAsync(vp => vp.SanPhamId, vp => vp);
+
+            var products = await _db.SanPhams
                 .Include(p => p.ThuongHieu)
                 .Include(p => p.DanhMuc)
                 .Include(p => p.Anhs)
                 .Where(p => p.TrangThai == TrangThaiHienThi.Hien
                         && p.IsActive
                         && (p.ThuongHieu == null || p.ThuongHieu.HienThi))
-                .AsQueryable();
+                .ToListAsync();
 
-            // 2) Bộ lọc
+            decimal EffectivePrice(SanPham p)
+            {
+                if (flashSaleMap.TryGetValue(p.Id, out var fsItem) && fsItem.GiaGiam.HasValue)
+                    return fsItem.GiaGiam.Value;
+                return p.GiaKhuyenMai ?? p.Gia;
+            }
+
+            var filteredProducts = products.AsEnumerable();
+
             if (idDanhMuc.HasValue)
-                baseQuery = baseQuery.Where(p => p.IdDanhMuc == idDanhMuc.Value);
+                filteredProducts = filteredProducts.Where(p => p.IdDanhMuc == idDanhMuc.Value);
 
             if (idThuongHieu.HasValue)
-                baseQuery = baseQuery.Where(p => p.IdThuongHieu == idThuongHieu.Value);
+                filteredProducts = filteredProducts.Where(p => p.IdThuongHieu == idThuongHieu.Value);
 
             if (giaMin.HasValue)
-                baseQuery = baseQuery.Where(p => p.Gia >= giaMin.Value);
+                filteredProducts = filteredProducts.Where(p => EffectivePrice(p) >= giaMin.Value);
 
             if (giaMax.HasValue)
-                baseQuery = baseQuery.Where(p => p.Gia <= giaMax.Value);
+                filteredProducts = filteredProducts.Where(p => EffectivePrice(p) <= giaMax.Value);
 
             if (!string.IsNullOrWhiteSpace(tuKhoa))
             {
-                var kw = tuKhoa.Trim().ToLower();
-                baseQuery = baseQuery.Where(p => p.Ten.ToLower().Contains(kw)
-                                              || (p.MoTaNgan ?? "").ToLower().Contains(kw));
+                var kw = tuKhoa.Trim().ToLowerInvariant();
+                filteredProducts = filteredProducts.Where(p =>
+                    p.Ten.ToLowerInvariant().Contains(kw) ||
+                    (p.MoTaNgan ?? string.Empty).ToLowerInvariant().Contains(kw));
             }
 
-            // 3) Sắp xếp
-            sapXep = sapXep?.ToLower();
-            baseQuery = sapXep switch
+            sapXep = string.IsNullOrWhiteSpace(sapXep) ? "moi" : sapXep.ToLowerInvariant();
+
+            var groupedProducts = filteredProducts
+                .GroupBy(p => p.ParentId ?? p.Id)
+                .Select(g =>
+                {
+                    var items = g.ToList();
+                    var representative = sapXep switch
+                    {
+                        "gia-asc" => items.OrderBy(EffectivePrice).ThenByDescending(x => x.Id).First(),
+                        "gia-desc" => items.OrderByDescending(EffectivePrice).ThenByDescending(x => x.Id).First(),
+                        _ => items.OrderByDescending(x => x.NgayCapNhat).ThenByDescending(x => x.Id).First()
+                    };
+
+                    var sortValue = sapXep switch
+                    {
+                        "gia-asc" => EffectivePrice(representative),
+                        "gia-desc" => EffectivePrice(representative),
+                        _ => 0m
+                    };
+
+                    var sortDate = items.Max(x => x.NgayCapNhat == default ? x.NgayTao : x.NgayCapNhat);
+
+                    return new
+                    {
+                        GroupId = g.Key,
+                        Representative = representative,
+                        SortValue = sortValue,
+                        SortDate = sortDate
+                    };
+                });
+
+            groupedProducts = sapXep switch
             {
-                "gia-asc" => baseQuery.OrderBy(p => p.Gia),
-                "gia-desc" => baseQuery.OrderByDescending(p => p.Gia),
-                "moi" => baseQuery.OrderByDescending(p => p.Id),
-                _ => baseQuery.OrderBy(p => p.Id)
+                "gia-asc" => groupedProducts.OrderBy(x => x.SortValue).ThenByDescending(x => x.SortDate),
+                "gia-desc" => groupedProducts.OrderByDescending(x => x.SortValue).ThenByDescending(x => x.SortDate),
+                _ => groupedProducts.OrderByDescending(x => x.SortDate).ThenByDescending(x => x.Representative.Id)
             };
 
-            // 4) Gom nhóm
-            var groupQuery = baseQuery
-                .Select(p => new
-                {
-                    GroupId = p.ParentId ?? p.Id,
-                    Prod = p
-                })
-                .GroupBy(x => x.GroupId);
+            var totalGroups = groupedProducts.Count();
 
-            // 5) Đếm tổng
-            var totalGroups = await groupQuery.CountAsync();
-
-            // 6) Lấy Id đại diện
-            var repIds = await groupQuery
-                .Select(g => g
-                    .OrderBy(x => x.Prod.Gia)
-                    .Select(x => x.Prod.Id)
-                    .First())
+            var reps = groupedProducts
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
-
-            // 7) Lấy thực thể đại diện
-            var repsDict = await _db.SanPhams
-                .Include(p => p.ThuongHieu)
-                .Include(p => p.DanhMuc)
-                .Include(p => p.Anhs)
-                .Where(p => repIds.Contains(p.Id))
-                .ToDictionaryAsync(p => p.Id, p => p);
-
-            var reps = repIds
-                .Where(id => repsDict.ContainsKey(id))
-                .Select(id => repsDict[id])
+                .Select(x => x.Representative)
                 .ToList();
 
             // 8) Lấy map biến thể
@@ -122,35 +146,7 @@ namespace ShopMVC.Controllers
                     }).ToList()
                 );
 
-            // =========================================================================
-            // [CODE MỚI] LẤY DỮ LIỆU FLASH SALE ĐỂ HIỂN THỊ RA VIEW
-            // =========================================================================
-            var activeFlashSale = await _db.Vouchers
-                .Where(v => v.IsFlashSale && v.IsActive && DateTime.Now >= v.NgayBatDau && DateTime.Now <= v.NgayHetHan)
-                .OrderByDescending(v => v.NgayBatDau)
-                .FirstOrDefaultAsync();
-
-            // Dictionary để map: ProductID -> Thông tin Flash Sale của sản phẩm đó
-            var flashSaleMap = new Dictionary<int, VoucherSanPham>();
-
-            if (activeFlashSale != null)
-            {
-                // Lấy tất cả sản phẩm trong đợt Flash Sale này
-                var fsItems = await _db.VoucherSanPhams
-                    .Where(vp => vp.VoucherId == activeFlashSale.Id)
-                    .ToListAsync();
-
-                foreach (var item in fsItems)
-                {
-                    if (!flashSaleMap.ContainsKey(item.SanPhamId))
-                    {
-                        flashSaleMap[item.SanPhamId] = item;
-                    }
-                }
-            }
-            // Truyền qua ViewBag
             ViewBag.FlashSaleMap = flashSaleMap;
-            // =========================================================================
 
             var vm = new SanPhamListVM
             {

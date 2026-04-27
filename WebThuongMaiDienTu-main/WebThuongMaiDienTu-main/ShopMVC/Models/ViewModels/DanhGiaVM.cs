@@ -17,7 +17,7 @@ namespace ShopMVC.Models.ViewModels
             get; set;
         }
 
-        [StringLength(1000)]
+        [StringLength(1000, ErrorMessage = "Nội dung đánh giá tối đa 1000 ký tự.")]
         public string? NoiDung { get; set; }
 
         public bool HienThiTen { get; set; } = true;

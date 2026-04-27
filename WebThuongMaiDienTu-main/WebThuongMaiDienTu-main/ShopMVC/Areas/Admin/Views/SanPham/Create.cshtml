@@ -41,10 +41,12 @@
                     <div class="col-md-4 mb-2">
                         <label class="form-label">Giá KM</label>
                         <input asp-for="GiaKhuyenMai" class="form-control" />
+                        <span asp-validation-for="GiaKhuyenMai" class="text-danger"></span>
                     </div>
                     <div class="col-md-4 mb-2">
                         <label class="form-label">Tồn kho</label>
                         <input asp-for="TonKho" class="form-control" />
+                        <span asp-validation-for="TonKho" class="text-danger"></span>
                     </div>
                 </div>
 
@@ -79,14 +81,17 @@
                     <div class="col-md-6 mb-2">
                         <label class="form-label">Hậu tố hiển thị (DisplaySuffix)</label>
                         <input asp-for="DisplaySuffix" class="form-control" placeholder="VD: Hồng 128GB / M / 42mm" />
+                        <span asp-validation-for="DisplaySuffix" class="text-danger"></span>
                     </div>
                     <div class="col-md-3 mb-2">
                         <label class="form-label">Màu</label>
                         <input asp-for="Mau" class="form-control" placeholder="VD: Hồng" />
+                        <span asp-validation-for="Mau" class="text-danger"></span>
                     </div>
                     <div class="col-md-3 mb-2">
                         <label class="form-label">Thuộc tính 2</label>
                         <input asp-for="ThuocTinh2" class="form-control" placeholder="VD: 128GB / M" />
+                        <span asp-validation-for="ThuocTinh2" class="text-danger"></span>
                     </div>
                 </div>
 
@@ -94,6 +99,7 @@
                     <div class="col-md-6 mb-2">
                         <label class="form-label">SKU (mã biến thể)</label>
                         <input asp-for="SKU" class="form-control" />
+                        <span asp-validation-for="SKU" class="text-danger"></span>
                     </div>
                     <div class="col-md-6 mb-2">
                         <div class="form-check mt-4">
@@ -120,7 +126,8 @@
                 <!-- Upload ảnh -->
                 <div class="mb-3">
                     <label class="form-label">Tải ảnh (có thể chọn nhiều)</label>
-                    <input type="file" name="files" multiple class="form-control" />
+                    <input type="file" name="files" multiple class="form-control" accept=".jpg,.jpeg,.png,.webp,.gif,.avif" />
+                    <span class="text-danger field-validation-valid" data-valmsg-for="files" data-valmsg-replace="true"></span>
                     <div class="form-text">
                         Ảnh đầu tiên sẽ được đặt làm ảnh chính nếu sản phẩm chưa có ảnh.
                     </div>
