@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 namespace ShopMVC.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = "QuanTri")]
     public class VoucherController : Controller
     {
         private readonly AppDbContext _db;

@@ -31,6 +31,7 @@ namespace ShopMVC.Data
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<ChiTietSanPham> ChiTietSanPhams { get; set; }
         public DbSet<Banner> Banners { get; set; }
+        public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -47,6 +48,10 @@ namespace ShopMVC.Data
             // (optional) ràng buộc độ dài nếu chưa có
             b.Entity<SanPham>().Property(x => x.Mau).HasMaxLength(64);
             b.Entity<SanPham>().Property(x => x.ThuocTinh2).HasMaxLength(64);
+            b.Entity<SystemSetting>().HasIndex(x => x.SettingKey).IsUnique();
+            b.Entity<SystemSetting>().Property(x => x.SettingKey).HasMaxLength(100);
+            b.Entity<SystemSetting>().Property(x => x.SettingValue).HasMaxLength(1000);
+            b.Entity<SystemSetting>().Property(x => x.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
 
             // ====== PRECISION TIỀN ======
             b.Entity<SanPham>().Property(x => x.Gia).HasColumnType("decimal(18,2)");

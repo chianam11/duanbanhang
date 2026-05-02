@@ -1,9 +1,15 @@
-﻿<!DOCTYPE html>
+@inject ShopMVC.Services.Interfaces.IShopInfoService ShopInfoService
+@{
+    var shopName = await ShopInfoService.GetShopNameAsync();
+    var isInternalUser = User.IsInRole("QuanTri") || User.IsInRole("NhanVien") || User.IsInRole("HoTroChat");
+    var showCustomerChat = User.Identity?.IsAuthenticated == true && !isInternalUser;
+}
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - ShopMVC</title>
+    <title>@ViewData["Title"] - @shopName</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -18,7 +24,7 @@
     </script>
     @await RenderSectionAsync("Styles", required: false)
 
-    @if (User.Identity?.IsAuthenticated == true)
+    @if (showCustomerChat)
     {
         <style>
             .chat-bubble {
@@ -115,7 +121,7 @@
         <nav class="navbar navbar-expand-lg bg-white fixed-top shadow-sm py-3">
             <div class="container">
                 <a class="navbar-brand fw-bold text-pink fs-3 me-4" asp-area="" asp-controller="Home" asp-action="Index">
-                    <i class="bi bi-bag-heart-fill me-2"></i>ShopMVC
+                    <i class="bi bi-bag-heart-fill me-2"></i>@shopName
                 </a>
 
                 <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
@@ -193,12 +199,10 @@
         </div>
 
         <footer class="text-muted" style="background-color: white;">
-
             <div class="container my-5 rounded-4 shadow-sm" style="background: linear-gradient(135deg,#fce7f3,#fecdd3); max-width: 1200px;">
-
                 <div class="row pt-4 pb-2">
                     <div class="col-md-3 col-lg-4 col-xl-3 mx-auto mb-4">
-                        <h5 class="text-uppercase fw-bold mb-4 text-dark"><i class="bi bi-shop me-2"></i>ShopMVC</h5>
+                        <h5 class="text-uppercase fw-bold mb-4 text-dark"><i class="bi bi-shop me-2"></i>@shopName</h5>
                         <p class="text-muted">
                             Mang đến những sản phẩm chất lượng tốt nhất với trải nghiệm
                             mua sắm hiện đại và tiện lợi cho khách hàng.
@@ -238,16 +242,15 @@
                 <hr class="my-3 text-muted" />
 
                 <div class="text-center py-2">
-                    <p class="mb-0 text-muted">&copy; 2025 - ShopMVC. All Rights Reserved.</p>
+                    <p class="mb-0 text-muted">&copy; 2025 - @shopName. All Rights Reserved.</p>
                 </div>
-
             </div>
         </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
-    @if (User.Identity?.IsAuthenticated == true)
+    @if (showCustomerChat)
     {
         <script src="~/lib/signalr/signalr.min.js"></script>
         <script src="~/js/chat.js" asp-append-version="true"></script>
@@ -269,7 +272,6 @@
         </div>
 
         <script>
-            // Tự động tắt sau 3s
             setTimeout(() => {
                 const toastEl = document.querySelector('.toast.show');
                 if (toastEl) {
@@ -280,19 +282,19 @@
         </script>
     }
 
-    @if (User.Identity?.IsAuthenticated == true)
+    @if (showCustomerChat)
     {
         <div class="chat-bubble" id="chatBubble">
             <i class="bi bi-chat-dots-fill"></i>
-            <span>Chat ngay với Shop</span>
+            <span>Chat với @shopName</span>
         </div>
 
         <div class="chat-window" id="chatWindow">
             <div class="chat-header">
-                Liên hệ với Shop
+                Liên hệ với @shopName
             </div>
             <div class="chat-body" id="chatBody">
-                <div class="msg msg-admin">Chào bạn, Shop có thể giúp gì cho bạn?</div>
+                <div class="msg msg-admin">Chào bạn, @shopName có thể hỗ trợ gì cho bạn?</div>
             </div>
             <div class="chat-footer">
                 <input type="text" id="chatInput" class="form-control me-2" placeholder="Nhập tin nhắn..." />
@@ -302,7 +304,6 @@
     }
 
     <script>
-        // Hàm gọi Modal (Các view khác sẽ gọi hàm này)
         function openAddToCartModal(id, name, price, img, stock) {
             document.getElementById('modalProductId').value = id;
             document.getElementById('modalProductName').innerText = name;
@@ -316,7 +317,6 @@
             myModal.show();
         }
 
-        // Xử lý tăng giảm số lượng
         function updateModalQty(change) {
             var input = document.getElementById('modalQtyInput');
             var max = parseInt(document.getElementById('modalProductStockHidden').value) || 999;
@@ -326,7 +326,6 @@
             }
         }
 
-        // Submit Ajax thêm giỏ hàng
         function submitAddToCart() {
             var pid = document.getElementById('modalProductId').value;
             var qty = document.getElementById('modalQtyInput').value;
@@ -337,12 +336,9 @@
                 data: { id: pid, soLuong: qty },
                 success: function (res) {
                     if (res.success) {
-                        // Đóng modal
                         var el = document.getElementById('addToCartModal');
                         var modal = bootstrap.Modal.getInstance(el);
                         modal.hide();
-
-                        // Reload trang để hiện Toast (hoặc cập nhật badge nếu muốn mượt hơn)
                         location.reload();
                     } else {
                         alert(res.message);

@@ -85,7 +85,7 @@ namespace ShopMVC.Controllers.Api
 
         // POST: api/products
         [HttpPost]
-        [Authorize(Roles = "QuanTri,Staff")]
+        [Authorize(Roles = "QuanTri,NhanVien")]
         public async Task<ActionResult<SanPham>> CreateProduct(SanPham product)
         {
             product.NgayTao = DateTime.Now;
@@ -99,7 +99,7 @@ namespace ShopMVC.Controllers.Api
 
         // PUT: api/products/5
         [HttpPut("{id}")]
-        [Authorize(Roles = "QuanTri,Staff")]
+        [Authorize(Roles = "QuanTri,NhanVien")]
         public async Task<IActionResult> UpdateProduct(int id, SanPham product)
         {
             if (id != product.Id)

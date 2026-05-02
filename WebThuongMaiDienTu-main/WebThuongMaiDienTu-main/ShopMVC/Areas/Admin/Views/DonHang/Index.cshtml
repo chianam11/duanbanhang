@@ -133,7 +133,7 @@
                                 }
 
                                 @* Override: chỉ Admin và chỉ khi đang ở Chuẩn bị / Đang giao *@
-                                @if ((User.IsInRole("Admin") || User.IsInRole("QuanTri")) &&
+                                @if (User.IsInRole("QuanTri") &&
                                (d.TrangThai == TrangThaiDonHang.ChuanBi || d.TrangThai == TrangThaiDonHang.DangGiao))
                                 {
                                     <button type="button"
@@ -147,7 +147,7 @@
                                 }
 
                                 @* Mở lại ≤10' sau Hoàn tất: chỉ Admin *@
-                                @if ((User.IsInRole("Admin") || User.IsInRole("QuanTri")) && allowReopen)
+                                @if (User.IsInRole("QuanTri") && allowReopen)
                                 {
                                     <button type="button"
                                             class="btn btn-sm btn-outline-warning"

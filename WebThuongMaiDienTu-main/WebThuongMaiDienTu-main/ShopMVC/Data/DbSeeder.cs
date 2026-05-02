@@ -2,6 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using ShopMVC.Configuration;
 using ShopMVC.Models;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -44,9 +47,10 @@ namespace ShopMVC.Data
 
             var roleMgr = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<NguoiDung>>();
+            var shopOptions = scope.ServiceProvider.GetRequiredService<IOptions<ShopSettings>>();
 
             // ===== 0) Tạo Roles
-            foreach (var r in new[] { "QuanTri", "NhanVien", "Khach" })
+            foreach (var r in new[] { "QuanTri", "NhanVien", "HoTroChat", "Khach" })
                 if (!await roleMgr.RoleExistsAsync(r))
                     await roleMgr.CreateAsync(new IdentityRole(r));
 
@@ -63,18 +67,20 @@ namespace ShopMVC.Data
                     HoTen = "Quản Trị Viên Chính" 
                 };
                 await userMgr.CreateAsync(admin, "Admin@123");
-                await userMgr.AddToRoleAsync(admin, "QuanTri");
             }
+
+            if (!await userMgr.IsInRoleAsync(admin, "QuanTri"))
+                await userMgr.AddToRoleAsync(admin, "QuanTri");
 
             // ===== 2) Tạo Employees (Nhân viên)
             var employees = new[]
             {
-                ("employee1@shopmvc.local", "Nhân Viên 1", "Employee@123"),
-                ("employee2@shopmvc.local", "Nhân Viên 2", "Employee@123"),
-                ("employee3@shopmvc.local", "Hỗ Trợ Chat", "Employee@123")
+                ("employee1@shopmvc.local", "Nhân Viên 1", "Employee@123", "NhanVien"),
+                ("employee2@shopmvc.local", "Nhân Viên 2", "Employee@123", "NhanVien"),
+                ("employee3@shopmvc.local", "Hỗ Trợ Chat", "Employee@123", "HoTroChat")
             };
 
-            foreach (var (email, fullName, password) in employees)
+            foreach (var (email, fullName, password, roleName) in employees)
             {
                 var emp = await userMgr.Users.FirstOrDefaultAsync(u => u.Email == email);
                 if (emp == null)
@@ -87,8 +93,48 @@ namespace ShopMVC.Data
                         HoTen = fullName 
                     };
                     await userMgr.CreateAsync(emp, password);
-                    await userMgr.AddToRoleAsync(emp, "NhanVien");
                 }
+
+                var currentRoles = await userMgr.GetRolesAsync(emp);
+                foreach (var currentRole in currentRoles.Where(r => r is "NhanVien" or "HoTroChat"))
+                {
+                    if (!string.Equals(currentRole, roleName, StringComparison.Ordinal))
+                        await userMgr.RemoveFromRoleAsync(emp, currentRole);
+                }
+
+                if (!await userMgr.IsInRoleAsync(emp, roleName))
+                    await userMgr.AddToRoleAsync(emp, roleName);
+            }
+
+            // ===== 2.1) Cấu hình động cho shop
+            await ctx.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[SystemSettings]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [SystemSettings](
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [SettingKey] NVARCHAR(100) NOT NULL,
+        [SettingValue] NVARCHAR(1000) NULL,
+        [UpdatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    );
+    CREATE UNIQUE INDEX [IX_SystemSettings_SettingKey] ON [SystemSettings]([SettingKey]);
+END");
+
+            var defaultShopName = string.IsNullOrWhiteSpace(shopOptions.Value.ShopName)
+                ? "ShopMVC"
+                : shopOptions.Value.ShopName.Trim();
+
+            var shopNameSetting = await ctx.SystemSettings
+                .FirstOrDefaultAsync(x => x.SettingKey == SystemSetting.ShopNameKey);
+
+            if (shopNameSetting == null)
+            {
+                ctx.SystemSettings.Add(new SystemSetting
+                {
+                    SettingKey = SystemSetting.ShopNameKey,
+                    SettingValue = defaultShopName,
+                    UpdatedAt = DateTime.UtcNow
+                });
+                await ctx.SaveChangesAsync();
             }
 
             // ===== 3) Ensure Category/Brand

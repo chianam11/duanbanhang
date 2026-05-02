@@ -4,6 +4,11 @@
     ViewData["Title"] = "Tổng quan";
     int currentYear = DateTime.Now.Year;
     int currentMonth = DateTime.Now.Month;
+    bool isAdmin = User.IsInRole("QuanTri");
+    var heading = isAdmin ? "Dashboard quản trị" : "Bảng điều hành nhân viên";
+    var subtitle = isAdmin
+        ? "Chào mừng trở lại! Đây là tổng quan vận hành hôm nay."
+        : "Theo dõi nhanh đơn hàng, sản phẩm và công việc vận hành trong ngày.";
 }
 
 @section Styles {
@@ -366,12 +371,15 @@
     <!-- HEADER -->
     <div class="d-flex justify-content-between align-items-end mb-5">
         <div>
-            <h2 class="fw-bolder text-dark mb-1">Dashboard</h2>
-            <p class="text-muted mb-0 fw-medium">Chào mừng trở lại! Đây là tổng quan hôm nay.</p>
+            <h2 class="fw-bolder text-dark mb-1">@heading</h2>
+            <p class="text-muted mb-0 fw-medium">@subtitle</p>
         </div>
-        <a href="@Url.Action("ExportToExcel", "Home", new { area = "Admin" })" class="btn-pro">
-            <i class="bi bi-cloud-download"></i> Xuất Báo Cáo
-        </a>
+        @if (isAdmin)
+        {
+            <a href="@Url.Action("ExportToExcel", "Home", new { area = "Admin" })" class="btn-pro">
+                <i class="bi bi-cloud-download"></i> Xuất Báo Cáo
+            </a>
+        }
     </div>
 
     <!-- 1. HÀNG CHỈ SỐ (STATS) -->

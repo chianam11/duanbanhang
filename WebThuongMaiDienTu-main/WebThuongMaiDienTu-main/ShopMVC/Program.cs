@@ -2,12 +2,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Serilog;
+using ShopMVC.Configuration;
 using ShopMVC.Data;
 using ShopMVC.Middlewares;
 using ShopMVC.Models;
 using ShopMVC.Services;
 using ShopMVC.Services.Interfaces;
-using Serilog;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using OpenApiInfo = Microsoft.OpenApi.Models.OpenApiInfo;
 using OpenApiContact = Microsoft.OpenApi.Models.OpenApiContact;
@@ -30,6 +31,7 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
+builder.Services.Configure<ShopSettings>(builder.Configuration.GetSection(ShopSettings.SectionName));
 
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -37,26 +39,22 @@ builder.Services.AddDbContext<AppDbContext>(options =>
            .ConfigureWarnings(warnings =>
                warnings.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
-// DÒNG BỊ LỖI ĐÃ BỊ XÓA Ở ĐÂY
 builder.Services.AddSignalR();
-// Identity + Roles (Tất cả cấu hình gộp lại trong khối này)
+
+// Identity + Roles
 builder.Services
-    .AddIdentity<NguoiDung, IdentityRole>(opt => // <-- ĐĂNG KÝ USER VÀ ROLE CÙNG LÚC
+    .AddIdentity<NguoiDung, IdentityRole>(opt =>
     {
-        // Cấu hình Password
         opt.Password.RequireDigit = false;
         opt.Password.RequireLowercase = false;
         opt.Password.RequireUppercase = false;
         opt.Password.RequireNonAlphanumeric = false;
         opt.Password.RequiredLength = 6;
 
-        // Cấu hình User
         opt.User.RequireUniqueEmail = true;
-
-        // Tùy chọn Sign In (được chuyển từ AddDefaultIdentity xuống)
         opt.SignIn.RequireConfirmedAccount = false;
     })
-    .AddEntityFrameworkStores<AppDbContext>() // <== ĐĂNG KÝ STORE CHO CẢ USER VÀ ROLE
+    .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders()
     .AddErrorDescriber<VietnameseIdentityErrorDescriber>()
     .AddDefaultUI();
@@ -65,24 +63,25 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IShopInfoService, ShopInfoService>();
 builder.Services.AddMemoryCache();
 
 // CORS Configuration
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
+    options.AddPolicy("AllowAll", policyBuilder =>
     {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
+        policyBuilder.AllowAnyOrigin()
+                     .AllowAnyMethod()
+                     .AllowAnyHeader();
     });
 
-    options.AddPolicy("AllowSpecific", builder =>
+    options.AddPolicy("AllowSpecific", policyBuilder =>
     {
-        builder.WithOrigins("http://localhost:3000", "http://localhost:5018", "https://localhost:7032")
-               .AllowAnyMethod()
-               .AllowAnyHeader()
-               .AllowCredentials();
+        policyBuilder.WithOrigins("http://localhost:3000", "http://localhost:5018", "https://localhost:7032")
+                     .AllowAnyMethod()
+                     .AllowAnyHeader()
+                     .AllowCredentials();
     });
 });
 
@@ -105,7 +104,6 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 
-    // Add security scheme for Bearer token
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -127,7 +125,7 @@ builder.Services.AddSwaggerGen(options =>
                     Id = "Bearer"
                 }
             },
-            new string[] { }
+            Array.Empty<string>()
         }
     });
 });
@@ -167,7 +165,7 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "ShopMVC API v1.0");
-    c.RoutePrefix = "api-docs"; // Access at /api-docs
+    c.RoutePrefix = "api-docs";
     c.DefaultModelsExpandDepth(2);
     c.DefaultModelExpandDepth(2);
 });
@@ -193,10 +191,9 @@ if (!isDocker)
 {
     app.UseHttpsRedirection();
 }
+
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHub<ShopMVC.Hubs.ChatHub>("/chatHub");
@@ -213,52 +210,10 @@ app.MapControllerRoute(
 
 app.MapRazorPages();
 
-// ====== SEED ROLES + GÁN ADMIN ======
 using (var scope = app.Services.CreateScope())
 {
-    var sv = scope.ServiceProvider;
-
-    // 1) migrate + seed dữ liệu cũ (nếu m đang dùng)
-    await DbSeeder.SeedAsync(sv);
-
-    // 2) seed roles + add admin
-    var roleMgr = sv.GetRequiredService<RoleManager<IdentityRole>>();
-    var userMgr = sv.GetRequiredService<UserManager<NguoiDung>>();
-
-    // Đổi Admin thành QuanTri (để đồng bộ với DbSeeder) nếu cần, hoặc ngược lại
-    string[] roles = new[] { "QuanTri", "Staff" }; // Hoặc "Admin" tùy vào hệ thống bạn dùng
-
-    foreach (var r in roles)
-    {
-        if (!await roleMgr.RoleExistsAsync(r))
-            await roleMgr.CreateAsync(new IdentityRole(r));
-    }
-
-    var adminEmail = "admin@shopmvc.local";
-    var adminUser = await userMgr.FindByEmailAsync(adminEmail);
-
-    if (adminUser == null)
-    {
-        adminUser = new NguoiDung
-        {
-            UserName = adminEmail,
-            Email = adminEmail,
-            EmailConfirmed = true,
-            // Thêm HoTen để đồng bộ với DbSeeder
-            HoTen = "Quan Tri Vien"
-        };
-        var create = await userMgr.CreateAsync(adminUser, "Admin@123");
-        if (!create.Succeeded)
-        {
-            throw new Exception("Tạo tài khoản admin thất bại: " +
-                string.Join("; ", create.Errors.Select(e => e.Description)));
-        }
-    }
-
-    // Thêm role Admin (hoặc QuanTri) nếu chưa có
-    if (!await userMgr.IsInRoleAsync(adminUser, "QuanTri")) // <== Sử dụng tên role đã tạo
-        await userMgr.AddToRoleAsync(adminUser, "QuanTri");
+    var services = scope.ServiceProvider;
+    await DbSeeder.SeedAsync(services);
 }
-// ====== END SEED ======
 
 app.Run();

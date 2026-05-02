@@ -6,7 +6,7 @@ using ShopMVC.Data;
 namespace ShopMVC.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    [Authorize(Roles = "QuanTri")]
+    [Authorize(Roles = "QuanTri,HoTroChat")]
     public class ChatController : Controller
     {
         private readonly AppDbContext _db;

@@ -11,6 +11,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=ShopMVC;User ID=sa;Password=${SA_PASSWORD:-YourStrong!Passw0rd};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
+      ShopSettings__ShopName: ${SHOP_NAME:-ShopMVC}
     ports:
       - "${APP_PORT:-8080}:8080"
     restart: unless-stopped

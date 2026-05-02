@@ -36,8 +36,9 @@ namespace ShopMVC.Configuration
 
         // Roles
         public const string ROLE_ADMIN = "QuanTri";
-        public const string ROLE_STAFF = "Staff";
-        public const string ROLE_USER = "User";
+        public const string ROLE_STAFF = "NhanVien";
+        public const string ROLE_CHAT_SUPPORT = "HoTroChat";
+        public const string ROLE_USER = "Khach";
 
         // Email
         public const int EMAIL_VERIFICATION_TIMEOUT_MINUTES = 15;

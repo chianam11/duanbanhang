@@ -77,6 +77,7 @@ namespace ShopMVC.Areas.Admin.Controllers
         }
 
         // --- HÀM XUẤT EXCEL (Đã kiểm tra kỹ) ---
+        [Microsoft.AspNetCore.Authorization.Authorize(Roles = "QuanTri")]
         public async Task<IActionResult> ExportToExcel(int? year)
         {
             try

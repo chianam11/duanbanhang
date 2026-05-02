@@ -12,7 +12,7 @@ using System.Security.Claims;
 namespace ShopMVC.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    [Authorize(Roles = "QuanTri,Staff")]
+    [Authorize(Roles = "QuanTri,NhanVien")]
     public class DonHangController : AdminBaseController
     {
         private readonly AppDbContext _db;
@@ -89,7 +89,7 @@ namespace ShopMVC.Areas.Admin.Controllers
             else
             {
                 // Override: chỉ Admin, chỉ cho lùi, và chỉ khi đang ở ChuẩnBị/ĐangGiao
-                if (!(User.IsInRole("Admin") || User.IsInRole("QuanTri")))
+                if (!User.IsInRole("QuanTri"))
                 {
                     TempData["toast"] = "Bạn không có quyền override trạng thái.";
                     return RedirectToAction(nameof(Index));
@@ -199,7 +199,7 @@ namespace ShopMVC.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reopen(int id, string reasonCode, string? note)
         {
-            if (!User.IsInRole("Admin"))
+            if (!User.IsInRole("QuanTri"))
             {
                 TempData["toast"] = "Chỉ Admin được phép mở lại đơn.";
                 return RedirectToAction(nameof(Index));

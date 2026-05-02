@@ -5,6 +5,7 @@ using ShopMVC.Models;
 
 namespace ShopMVC.Areas.Admin.Controllers
 {
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = "QuanTri")]
     public class ThuongHieuController : AdminBaseController
     {
         private readonly AppDbContext _db;

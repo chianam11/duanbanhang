@@ -1,0 +1,35 @@
+@model ShopMVC.Areas.Admin.ViewModels.ShopSettingsViewModel
+@{
+    ViewData["Title"] = "Cấu hình shop";
+}
+
+<div class="container-fluid" style="max-width: 760px;">
+    <div class="mb-4">
+        <h2 class="mb-1">Cấu hình shop</h2>
+        <p class="text-muted mb-0">Tên shop được lưu trong database và cập nhật động cho toàn bộ giao diện.</p>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="ShopName" class="form-label fw-semibold"></label>
+                    <input asp-for="ShopName" class="form-control form-control-lg" placeholder="Nhập tên shop..." />
+                    <span asp-validation-for="ShopName" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Gợi ý: dùng tên ngắn, rõ, dễ hiển thị trên header và title.</small>
+                    <button type="submit" class="btn btn-dark">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,44 +1,67 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
 @using ShopMVC.Models
 @inject SignInManager<NguoiDung> SignInManager
 @inject UserManager<NguoiDung> UserManager
 
 @if (SignInManager.IsSignedIn(User))
 {
-    // --- BƯỚC 1: LẤY THÔNG TIN ĐẦY ĐỦ CỦA USER ---
-    // Dùng UserManager để lấy object NguoiDung đầy đủ từ CSDL
     var currentUser = await UserManager.GetUserAsync(User);
-
-    // Kiểm tra xem HoTen có tồn tại không, nếu không thì dùng email
-    var displayName = currentUser?.HoTen; // Lấy Họ Tên
+    var displayName = currentUser?.HoTen;
 
     if (string.IsNullOrEmpty(displayName))
     {
-        // Nếu không có Họ Tên, dùng tạm email (hoặc chữ viết tắt)
         displayName = User.Identity?.Name ?? "User";
     }
 
-    <div class="nav-item dropdown">
+    string? workspaceArea = null;
+    string? workspaceController = null;
+    string? workspaceAction = null;
+    string? workspaceLabel = null;
+    string? workspaceIcon = null;
 
+    if (User.IsInRole("QuanTri"))
+    {
+        workspaceArea = "Admin";
+        workspaceController = "Home";
+        workspaceAction = "Index";
+        workspaceLabel = "Trang quản trị";
+        workspaceIcon = "bi-shield-lock-fill";
+    }
+    else if (User.IsInRole("NhanVien"))
+    {
+        workspaceArea = "Admin";
+        workspaceController = "Home";
+        workspaceAction = "Index";
+        workspaceLabel = "Khu vực nhân viên";
+        workspaceIcon = "bi-briefcase-fill";
+    }
+    else if (User.IsInRole("HoTroChat"))
+    {
+        workspaceArea = "Admin";
+        workspaceController = "Chat";
+        workspaceAction = "Index";
+        workspaceLabel = "Trung tâm chat";
+        workspaceIcon = "bi-headset";
+    }
+
+    <div class="nav-item dropdown">
         <a class="nav-link dropdown-toggle text-dark text-decoration-none d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-person-circle fs-4 me-1"></i>
-
             <span>@displayName</span>
         </a>
 
         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-
             <li>
                 <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/Index">
                     <i class="bi bi-person-fill me-2"></i> Hồ sơ cá nhân
                 </a>
             </li>
 
-            @if (User.IsInRole("QuanTri"))
+            @if (!string.IsNullOrWhiteSpace(workspaceArea) && !string.IsNullOrWhiteSpace(workspaceController) && !string.IsNullOrWhiteSpace(workspaceAction))
             {
                 <li>
-                    <a class="dropdown-item" asp-area="Admin" asp-controller="Home" asp-action="Index">
-                        <i class="bi bi-shield-lock-fill me-2"></i> Trang Admin
+                    <a class="dropdown-item" asp-area="@workspaceArea" asp-controller="@workspaceController" asp-action="@workspaceAction">
+                        <i class="bi @workspaceIcon me-2"></i> @workspaceLabel
                     </a>
                 </li>
             }

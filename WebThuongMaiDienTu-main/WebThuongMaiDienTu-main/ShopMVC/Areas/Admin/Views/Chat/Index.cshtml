@@ -1,64 +1,87 @@
-﻿@model List<ShopMVC.Models.ChatSession>
+@model List<ShopMVC.Models.ChatSession>
 @{
-    ViewData["Title"] = "Quản lý Chat";
+    ViewData["Title"] = "Hỗ trợ chat";
 }
 
-<h2>Danh sách Chat đang hoạt động</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Hàng đợi hỗ trợ chat</h2>
+        <p class="text-muted mb-0">Chỉ hiển thị các phiên chat đang mở và đã có tin nhắn từ khách hàng.</p>
+    </div>
+    <span class="badge bg-dark fs-6">@Model.Count phiên</span>
+</div>
 
-<table class="table" id="sessionTable">
-    <thead>
-        <tr>
-            <th>Session ID</th>
-            <th>User</th>
-            <th>Thời gian</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var session in Model)
-        {
-            <tr data-session-id="@session.Id">
-                <td>@session.Id</td>
-                <td>@session.User</td>
-                <td>@session.ThoiGianTao</td>
-                <td>
-                    <a asp-action="ChiTiet" asp-route-id="@session.Id" class="btn btn-primary">
-                        Vào chat
-                    </a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0" id="sessionTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Session</th>
+                    <th>Khách hàng</th>
+                    <th>Thời gian mở</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr id="emptyStateRow">
+                        <td colspan="4" class="text-center py-5 text-muted">Chưa có phiên chat nào cần xử lý.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var session in Model)
+                    {
+                        var customerName = session.User?.HoTen ?? session.User?.Email ?? session.UserConnectionId;
+                        <tr data-session-id="@session.Id">
+                            <td class="fw-semibold">#@session.Id</td>
+                            <td>@customerName</td>
+                            <td>@session.ThoiGianTao.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-end">
+                                <a asp-action="ChiTiet" asp-route-id="@session.Id" class="btn btn-primary btn-sm">
+                                    Mở hội thoại
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
 
 @section Scripts {
     <script src="~/lib/signalr/signalr.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // Kết nối với tư cách admin
+            const tableBody = document.querySelector("#sessionTable tbody");
+
             const connection = new signalR.HubConnectionBuilder()
                 .withUrl("/chatHub?isAdmin=true")
                 .build();
 
-            // Khi có user mới kết nối
-            connection.on("NewUserConnected", (sessionId, connectionId) => {
-                alert(`Có kết nối mới! Session ID: ${sessionId}`);
+            connection.on("NewUserConnected", (sessionId, connectionId, displayName) => {
+                document.getElementById("emptyStateRow")?.remove();
 
-                // Tự động thêm dòng mới vào table (nâng cao)
-                const tableBody = document.querySelector("#sessionTable tbody");
+                if (tableBody.querySelector(`tr[data-session-id="${sessionId}"]`)) {
+                    return;
+                }
+
                 const newRow = `
                     <tr data-session-id="${sessionId}">
-                        <td>${sessionId}</td>
-                        <td>(Chưa đăng nhập)</td>
+                        <td class="fw-semibold">#${sessionId}</td>
+                        <td>${displayName || "Khách hàng"}</td>
                         <td>Vừa xong</td>
-                        <td>
-                            <a href="/Admin/Chat/ChiTiet/${sessionId}" class="btn btn-primary">
-                                Vào chat
+                        <td class="text-end">
+                            <a href="/Admin/Chat/ChiTiet/${sessionId}" class="btn btn-primary btn-sm">
+                                Mở hội thoại
                             </a>
                         </td>
                     </tr>
                 `;
-                tableBody.insertAdjacentHTML('afterbegin', newRow);
+
+                tableBody.insertAdjacentHTML("afterbegin", newRow);
             });
 
             connection.start().catch(err => console.error(err.toString()));
