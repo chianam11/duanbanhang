@@ -17,7 +17,7 @@ namespace ShopMVC.Configuration
         public const int CACHE_DURATION_LONG = 120;
 
         // File uploads
-        public const long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+        public const long MAX_FILE_SIZE = 5 * 1024 * 1024;
         public const string ALLOWED_IMAGE_EXTENSIONS = ".jpg,.jpeg,.png,.gif,.webp";
         public const string UPLOAD_DIRECTORY = "uploads";
 
@@ -31,14 +31,16 @@ namespace ShopMVC.Configuration
         public const int MIN_DESCRIPTION_LENGTH = 10;
 
         // Order
-        public const int ORDER_PENDING_HOURS = 24; // Order expires in 24 hours if not confirmed
-        public const decimal SHIPPING_FEE_DEFAULT = 30000; // VND
+        public const int ORDER_PENDING_HOURS = 24;
+        public const decimal SHIPPING_FEE_DEFAULT = 30000;
 
         // Roles
         public const string ROLE_ADMIN = "QuanTri";
         public const string ROLE_STAFF = "NhanVien";
         public const string ROLE_CHAT_SUPPORT = "HoTroChat";
         public const string ROLE_USER = "Khach";
+        public const string ROLES_ADMIN_OR_STAFF = ROLE_ADMIN + "," + ROLE_STAFF;
+        public const string ROLES_SUPPORT_CONSOLE = ROLE_ADMIN + "," + ROLE_CHAT_SUPPORT;
 
         // Email
         public const int EMAIL_VERIFICATION_TIMEOUT_MINUTES = 15;
@@ -54,27 +56,24 @@ namespace ShopMVC.Configuration
     /// </summary>
     public static class ApiMessages
     {
-        // Success
-        public const string SUCCESS = "Thành công";
-        public const string CREATED = "Tạo thành công";
-        public const string UPDATED = "Cập nhật thành công";
-        public const string DELETED = "Xóa thành công";
+        public const string SUCCESS = "Thanh cong";
+        public const string CREATED = "Tao thanh cong";
+        public const string UPDATED = "Cap nhat thanh cong";
+        public const string DELETED = "Xoa thanh cong";
 
-        // Errors
-        public const string ERROR_NOT_FOUND = "Không tìm thấy";
-        public const string ERROR_INVALID_REQUEST = "Yêu cầu không hợp lệ";
-        public const string ERROR_UNAUTHORIZED = "Không được phép truy cập";
-        public const string ERROR_FORBIDDEN = "Cấm truy cập";
-        public const string ERROR_CONFLICT = "Dữ liệu bị xung đột";
-        public const string ERROR_INTERNAL = "Lỗi hệ thống";
+        public const string ERROR_NOT_FOUND = "Khong tim thay";
+        public const string ERROR_INVALID_REQUEST = "Yeu cau khong hop le";
+        public const string ERROR_UNAUTHORIZED = "Khong duoc phep truy cap";
+        public const string ERROR_FORBIDDEN = "Cam truy cap";
+        public const string ERROR_CONFLICT = "Du lieu bi xung dot";
+        public const string ERROR_INTERNAL = "Loi he thong";
         public const string ERROR_VALIDATION = "Validation failed";
 
-        // Business logic
-        public const string ERROR_INSUFFICIENT_STOCK = "Tồn kho không đủ";
-        public const string ERROR_INVALID_VOUCHER = "Voucher không hợp lệ";
-        public const string ERROR_EXPIRED_VOUCHER = "Voucher đã hết hạn";
-        public const string ERROR_DUPLICATE_EMAIL = "Email đã tồn tại";
-        public const string ERROR_INVALID_CREDENTIALS = "Tên đăng nhập hoặc mật khẩu sai";
+        public const string ERROR_INSUFFICIENT_STOCK = "Ton kho khong du";
+        public const string ERROR_INVALID_VOUCHER = "Voucher khong hop le";
+        public const string ERROR_EXPIRED_VOUCHER = "Voucher da het han";
+        public const string ERROR_DUPLICATE_EMAIL = "Email da ton tai";
+        public const string ERROR_INVALID_CREDENTIALS = "Ten dang nhap hoac mat khau sai";
     }
 
     /// <summary>

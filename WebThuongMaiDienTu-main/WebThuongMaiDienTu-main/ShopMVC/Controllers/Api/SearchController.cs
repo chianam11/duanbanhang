@@ -51,7 +51,7 @@ namespace ShopMVC.Controllers.Api
                     keyword = keyword.ToLower();
                     query = query.Where(p =>
                         p.Ten.ToLower().Contains(keyword) ||
-                        p.MoTaNgan.ToLower().Contains(keyword));
+                        (p.MoTaNgan != null && p.MoTaNgan.ToLower().Contains(keyword)));
                 }
 
                 // Category filter

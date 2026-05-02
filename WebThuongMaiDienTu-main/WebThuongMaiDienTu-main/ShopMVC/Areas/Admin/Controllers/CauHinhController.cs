@@ -35,7 +35,7 @@ namespace ShopMVC.Areas.Admin.Controllers
             }
 
             await _shopInfoService.UpdateShopNameAsync(model.ShopName, cancellationToken);
-            TempData["toast"] = "Đã cập nhật tên shop.";
+            TempData["toast"] = "Da cap nhat ten shop.";
             return RedirectToAction(nameof(Index));
         }
     }

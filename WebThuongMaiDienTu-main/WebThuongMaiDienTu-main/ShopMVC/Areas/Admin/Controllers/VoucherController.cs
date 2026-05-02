@@ -164,8 +164,8 @@ namespace ShopMVC.Areas.Admin.Controllers
             // Flash sale thì không cho gán brand/category (chỉ theo sản phẩm)
             if (model.IsFlashSale)
             {
-                model.SelectedBrandIds = null;
-                model.SelectedCategoryIds = null;
+                model.SelectedBrandIds = new List<int>();
+                model.SelectedCategoryIds = new List<int>();
             }
 
             if (ModelState.IsValid)
@@ -462,7 +462,7 @@ namespace ShopMVC.Areas.Admin.Controllers
             ViewBag.Products = products;
 
             var added = await _db.VoucherSanPhams
-                .Include(vp => vp.SanPham).ThenInclude(p => p.Anhs)
+                .Include(vp => vp.SanPham!).ThenInclude(p => p.Anhs)
                 .Where(vp => vp.VoucherId == id)
                 .OrderByDescending(vp => vp.VoucherId)
                 .ToListAsync();
@@ -500,10 +500,11 @@ namespace ShopMVC.Areas.Admin.Controllers
 
                 // Check sản phẩm có đang nằm trong flash sale khác trùng thời gian
                 bool inAnotherFlash = await _db.VoucherSanPhams
-                    .Include(vp => vp.Voucher)
+                    .Include(vp => vp.Voucher!)
                     .AnyAsync(vp =>
                         vp.SanPhamId == productId &&
                         vp.VoucherId != voucherId &&
+                        vp.Voucher != null &&
                         vp.Voucher.IsFlashSale &&
                         vp.Voucher.IsActive &&
                         vp.Voucher.NgayBatDau <= voucher.NgayHetHan &&

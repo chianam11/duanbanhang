@@ -43,14 +43,15 @@ namespace ShopMVC.Controllers
             var productIds = gio.Select(x => x.IdSanPham).ToList();
 
             var activeFlashSale = await _db.VoucherSanPhams
-                .Include(vp => vp.Voucher)
+                .Include(vp => vp.Voucher!)
                 .Where(vp => productIds.Contains(vp.SanPhamId)
+                             && vp.Voucher != null
                              && vp.Voucher.IsFlashSale
                              && vp.Voucher.IsActive
                              && DateTime.Now >= vp.Voucher.NgayBatDau
                              && DateTime.Now <= vp.Voucher.NgayHetHan)
-                .OrderByDescending(vp => vp.Voucher.NgayBatDau)
-                .Select(vp => vp.Voucher)
+                .OrderByDescending(vp => vp.Voucher!.NgayBatDau)
+                .Select(vp => vp.Voucher!)
                 .FirstOrDefaultAsync();
 
             if (activeFlashSale != null)
@@ -236,7 +237,7 @@ namespace ShopMVC.Controllers
 
             // TIẾP TỤC TRUY VẤN VÀ LẤY DỮ LIỆU
             var ds = await query
-                .Include(d => d.ChiTiets).ThenInclude(ct => ct.SanPham).ThenInclude(sp => sp.Anhs)
+                .Include(d => d.ChiTiets).ThenInclude(ct => ct.SanPham!).ThenInclude(sp => sp.Anhs)
                 .OrderByDescending(d => d.NgayDat).ToListAsync();
 
             return View(ds);
@@ -292,7 +293,7 @@ namespace ShopMVC.Controllers
 
             var donHang = await _db.DonHangs
                 .Include(d => d.ChiTiets)
-                    .ThenInclude(ct => ct.SanPham)
+                    .ThenInclude(ct => ct.SanPham!)
                         .ThenInclude(sp => sp.Anhs)
                 .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
 

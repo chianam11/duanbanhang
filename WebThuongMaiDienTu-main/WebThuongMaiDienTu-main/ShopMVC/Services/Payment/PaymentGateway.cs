@@ -27,21 +27,21 @@ namespace ShopMVC.Services.Payment
         public int OrderId { get; set; }
         public decimal Amount { get; set; }
         public string Currency { get; set; } = "VND";
-        public string Description { get; set; }
-        public string CustomerEmail { get; set; }
-        public string CustomerPhone { get; set; }
-        public string ReturnUrl { get; set; }
-        public string CancelUrl { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public string CustomerEmail { get; set; } = string.Empty;
+        public string CustomerPhone { get; set; } = string.Empty;
+        public string ReturnUrl { get; set; } = string.Empty;
+        public string CancelUrl { get; set; } = string.Empty;
         public Dictionary<string, string> Metadata { get; set; } = new();
     }
 
     public class PaymentResponse
     {
         public bool Success { get; set; }
-        public string Message { get; set; }
-        public string TransactionId { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string TransactionId { get; set; } = string.Empty;
         public PaymentStatus Status { get; set; }
-        public string PaymentUrl { get; set; }  // For redirect payment
+        public string PaymentUrl { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
@@ -59,12 +59,15 @@ namespace ShopMVC.Services.Payment
 
         public async Task<PaymentResponse> CreatePaymentAsync(PaymentRequest request)
         {
-            _logger.LogInformation($"Mock payment created for order {request.OrderId}: {request.Amount} {request.Currency}");
+            _logger.LogInformation(
+                "Mock payment created for order {OrderId}: {Amount} {Currency}",
+                request.OrderId,
+                request.Amount,
+                request.Currency);
 
-            // Simulate payment processing
             await Task.Delay(100);
 
-            var transactionId = $"TXN_{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
+            var transactionId = $"TXN_{Guid.NewGuid().ToString().Substring(0, 8).ToUpperInvariant()}";
 
             return new PaymentResponse
             {
@@ -80,7 +83,6 @@ namespace ShopMVC.Services.Payment
         {
             await Task.Delay(50);
 
-            // Mock success for verify
             return new PaymentResponse
             {
                 Success = true,
@@ -122,12 +124,7 @@ namespace ShopMVC.Services.Payment
         {
             try
             {
-                // TODO: Implement Stripe checkout session creation
-                // var sessionService = new SessionService();
-                // var options = new SessionCreateOptions { ... };
-                // var session = await sessionService.CreateAsync(options);
-
-                _logger.LogInformation($"Stripe payment session created for order {request.OrderId}");
+                _logger.LogInformation("Stripe payment session created for order {OrderId}", request.OrderId);
 
                 await Task.Delay(100);
 
@@ -152,26 +149,26 @@ namespace ShopMVC.Services.Payment
 
         public async Task<PaymentResponse> VerifyPaymentAsync(string transactionId)
         {
-            // TODO: Implement Stripe payment verification
             await Task.Delay(50);
 
             return new PaymentResponse
             {
                 Success = true,
                 Message = "Payment verified with Stripe",
+                TransactionId = transactionId,
                 Status = PaymentStatus.Completed
             };
         }
 
         public async Task<PaymentResponse> RefundPaymentAsync(string transactionId, decimal amount)
         {
-            // TODO: Implement Stripe refund
             await Task.Delay(100);
 
             return new PaymentResponse
             {
                 Success = true,
                 Message = "Refund processed with Stripe",
+                TransactionId = transactionId,
                 Status = PaymentStatus.Refunded
             };
         }

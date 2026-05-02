@@ -4,25 +4,25 @@ namespace ShopMVC.Services
 {
     public class VietnameseIdentityErrorDescriber : IdentityErrorDescriber
     {
-        public override IdentityError DefaultError() => new() { Code = nameof(DefaultError), Description = "Đã xảy ra lỗi không xác định." };
-        public override IdentityError ConcurrencyFailure() => new() { Code = nameof(ConcurrencyFailure), Description = "Dữ liệu vừa thay đổi, vui lòng thử lại." };
-        public override IdentityError PasswordMismatch() => new() { Code = nameof(PasswordMismatch), Description = "Mật khẩu không chính xác." };
-        public override IdentityError InvalidToken() => new() { Code = nameof(InvalidToken), Description = "Mã xác thực không hợp lệ." };
-        public override IdentityError LoginAlreadyAssociated() => new() { Code = nameof(LoginAlreadyAssociated), Description = "Tài khoản đăng nhập này đã được liên kết với người dùng khác." };
-        public override IdentityError InvalidUserName(string userName) => new() { Code = nameof(InvalidUserName), Description = $"Tên đăng nhập '{userName}' không hợp lệ." };
-        public override IdentityError InvalidEmail(string email) => new() { Code = nameof(InvalidEmail), Description = $"Email '{email}' không hợp lệ." };
-        public override IdentityError DuplicateUserName(string userName) => new() { Code = nameof(DuplicateUserName), Description = $"Tên đăng nhập '{userName}' đã tồn tại." };
-        public override IdentityError DuplicateEmail(string email) => new() { Code = nameof(DuplicateEmail), Description = $"Email '{email}' đã được sử dụng." };
-        public override IdentityError InvalidRoleName(string role) => new() { Code = nameof(InvalidRoleName), Description = $"Vai trò '{role}' không hợp lệ." };
-        public override IdentityError DuplicateRoleName(string role) => new() { Code = nameof(DuplicateRoleName), Description = $"Vai trò '{role}' đã tồn tại." };
-        public override IdentityError UserAlreadyHasPassword() => new() { Code = nameof(UserAlreadyHasPassword), Description = "Tài khoản này đã có mật khẩu." };
-        public override IdentityError UserLockoutNotEnabled() => new() { Code = nameof(UserLockoutNotEnabled), Description = "Tính năng khóa tài khoản chưa được bật." };
-        public override IdentityError UserAlreadyInRole(string role) => new() { Code = nameof(UserAlreadyInRole), Description = $"Người dùng đã thuộc vai trò '{role}'." };
-        public override IdentityError UserNotInRole(string role) => new() { Code = nameof(UserNotInRole), Description = $"Người dùng không thuộc vai trò '{role}'." };
-        public override IdentityError PasswordTooShort(int length) => new() { Code = nameof(PasswordTooShort), Description = $"Mật khẩu phải có ít nhất {length} ký tự." };
-        public override IdentityError PasswordRequiresNonAlphanumeric() => new() { Code = nameof(PasswordRequiresNonAlphanumeric), Description = "Mật khẩu phải có ít nhất một ký tự đặc biệt." };
-        public override IdentityError PasswordRequiresDigit() => new() { Code = nameof(PasswordRequiresDigit), Description = "Mật khẩu phải có ít nhất một chữ số." };
-        public override IdentityError PasswordRequiresLower() => new() { Code = nameof(PasswordRequiresLower), Description = "Mật khẩu phải có ít nhất một chữ thường." };
-        public override IdentityError PasswordRequiresUpper() => new() { Code = nameof(PasswordRequiresUpper), Description = "Mật khẩu phải có ít nhất một chữ in hoa." };
+        public override IdentityError DefaultError() => new() { Code = nameof(DefaultError), Description = "Da xay ra loi khong xac dinh." };
+        public override IdentityError ConcurrencyFailure() => new() { Code = nameof(ConcurrencyFailure), Description = "Du lieu vua thay doi, vui long thu lai." };
+        public override IdentityError PasswordMismatch() => new() { Code = nameof(PasswordMismatch), Description = "Mat khau khong chinh xac." };
+        public override IdentityError InvalidToken() => new() { Code = nameof(InvalidToken), Description = "Ma xac thuc khong hop le." };
+        public override IdentityError LoginAlreadyAssociated() => new() { Code = nameof(LoginAlreadyAssociated), Description = "Tai khoan dang nhap nay da duoc lien ket voi nguoi dung khac." };
+        public override IdentityError InvalidUserName(string? userName) => new() { Code = nameof(InvalidUserName), Description = $"Ten dang nhap '{userName}' khong hop le." };
+        public override IdentityError InvalidEmail(string? email) => new() { Code = nameof(InvalidEmail), Description = $"Email '{email}' khong hop le." };
+        public override IdentityError DuplicateUserName(string? userName) => new() { Code = nameof(DuplicateUserName), Description = $"Ten dang nhap '{userName}' da ton tai." };
+        public override IdentityError DuplicateEmail(string? email) => new() { Code = nameof(DuplicateEmail), Description = $"Email '{email}' da duoc su dung." };
+        public override IdentityError InvalidRoleName(string? role) => new() { Code = nameof(InvalidRoleName), Description = $"Vai tro '{role}' khong hop le." };
+        public override IdentityError DuplicateRoleName(string? role) => new() { Code = nameof(DuplicateRoleName), Description = $"Vai tro '{role}' da ton tai." };
+        public override IdentityError UserAlreadyHasPassword() => new() { Code = nameof(UserAlreadyHasPassword), Description = "Tai khoan nay da co mat khau." };
+        public override IdentityError UserLockoutNotEnabled() => new() { Code = nameof(UserLockoutNotEnabled), Description = "Tinh nang khoa tai khoan chua duoc bat." };
+        public override IdentityError UserAlreadyInRole(string? role) => new() { Code = nameof(UserAlreadyInRole), Description = $"Nguoi dung da thuoc vai tro '{role}'." };
+        public override IdentityError UserNotInRole(string? role) => new() { Code = nameof(UserNotInRole), Description = $"Nguoi dung khong thuoc vai tro '{role}'." };
+        public override IdentityError PasswordTooShort(int length) => new() { Code = nameof(PasswordTooShort), Description = $"Mat khau phai co it nhat {length} ky tu." };
+        public override IdentityError PasswordRequiresNonAlphanumeric() => new() { Code = nameof(PasswordRequiresNonAlphanumeric), Description = "Mat khau phai co it nhat mot ky tu dac biet." };
+        public override IdentityError PasswordRequiresDigit() => new() { Code = nameof(PasswordRequiresDigit), Description = "Mat khau phai co it nhat mot chu so." };
+        public override IdentityError PasswordRequiresLower() => new() { Code = nameof(PasswordRequiresLower), Description = "Mat khau phai co it nhat mot chu thuong." };
+        public override IdentityError PasswordRequiresUpper() => new() { Code = nameof(PasswordRequiresUpper), Description = "Mat khau phai co it nhat mot chu in hoa." };
     }
 }

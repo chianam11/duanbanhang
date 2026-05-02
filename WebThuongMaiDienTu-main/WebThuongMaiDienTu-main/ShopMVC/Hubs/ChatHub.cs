@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using ShopMVC.Configuration;
 using ShopMVC.Data;
 using ShopMVC.Models;
 using System.Security.Claims;
@@ -19,7 +20,8 @@ namespace ShopMVC.Hubs
         }
 
         private bool IsSupportAgent()
-            => Context.User?.IsInRole("QuanTri") == true || Context.User?.IsInRole("HoTroChat") == true;
+            => Context.User?.IsInRole(AppConstants.ROLE_ADMIN) == true
+            || Context.User?.IsInRole(AppConstants.ROLE_CHAT_SUPPORT) == true;
 
         public override async Task OnConnectedAsync()
         {

@@ -44,7 +44,7 @@ namespace ShopMVC.Services
 
     public class CategorySales
     {
-        public string CategoryName { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
         public decimal Sales { get; set; }
         public int Orders { get; set; }
     }
@@ -52,7 +52,7 @@ namespace ShopMVC.Services
     public class ProductSales
     {
         public int ProductId { get; set; }
-        public string ProductName { get; set; }
+        public string ProductName { get; set; } = string.Empty;
         public int QuantitySold { get; set; }
         public decimal TotalRevenue { get; set; }
     }
@@ -68,7 +68,7 @@ namespace ShopMVC.Services
 
     public class ProductStock
     {
-        public string ProductName { get; set; }
+        public string ProductName { get; set; } = string.Empty;
         public int Stock { get; set; }
         public decimal Price { get; set; }
     }
@@ -84,8 +84,8 @@ namespace ShopMVC.Services
 
     public class TopCustomer
     {
-        public string Email { get; set; }
-        public string Name { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
         public int Orders { get; set; }
         public decimal TotalSpent { get; set; }
     }
@@ -268,8 +268,8 @@ namespace ShopMVC.Services
                 {
                     topCustomersWithDetails.Add(new TopCustomer
                     {
-                        Email = user.Email,
-                        Name = user.UserName,
+                        Email = user.Email ?? string.Empty,
+                        Name = user.UserName ?? string.Empty,
                         Orders = customer.Orders,
                         TotalSpent = customer.TotalSpent
                     });

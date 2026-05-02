@@ -50,7 +50,13 @@ namespace ShopMVC.Data
             var shopOptions = scope.ServiceProvider.GetRequiredService<IOptions<ShopSettings>>();
 
             // ===== 0) Tạo Roles
-            foreach (var r in new[] { "QuanTri", "NhanVien", "HoTroChat", "Khach" })
+            foreach (var r in new[]
+            {
+                AppConstants.ROLE_ADMIN,
+                AppConstants.ROLE_STAFF,
+                AppConstants.ROLE_CHAT_SUPPORT,
+                AppConstants.ROLE_USER
+            })
                 if (!await roleMgr.RoleExistsAsync(r))
                     await roleMgr.CreateAsync(new IdentityRole(r));
 
@@ -69,15 +75,15 @@ namespace ShopMVC.Data
                 await userMgr.CreateAsync(admin, "Admin@123");
             }
 
-            if (!await userMgr.IsInRoleAsync(admin, "QuanTri"))
-                await userMgr.AddToRoleAsync(admin, "QuanTri");
+            if (!await userMgr.IsInRoleAsync(admin, AppConstants.ROLE_ADMIN))
+                await userMgr.AddToRoleAsync(admin, AppConstants.ROLE_ADMIN);
 
             // ===== 2) Tạo Employees (Nhân viên)
             var employees = new[]
             {
-                ("employee1@shopmvc.local", "Nhân Viên 1", "Employee@123", "NhanVien"),
-                ("employee2@shopmvc.local", "Nhân Viên 2", "Employee@123", "NhanVien"),
-                ("employee3@shopmvc.local", "Hỗ Trợ Chat", "Employee@123", "HoTroChat")
+                ("employee1@shopmvc.local", "Nhân Viên 1", "Employee@123", AppConstants.ROLE_STAFF),
+                ("employee2@shopmvc.local", "Nhân Viên 2", "Employee@123", AppConstants.ROLE_STAFF),
+                ("employee3@shopmvc.local", "Hỗ Trợ Chat", "Employee@123", AppConstants.ROLE_CHAT_SUPPORT)
             };
 
             foreach (var (email, fullName, password, roleName) in employees)
@@ -96,7 +102,8 @@ namespace ShopMVC.Data
                 }
 
                 var currentRoles = await userMgr.GetRolesAsync(emp);
-                foreach (var currentRole in currentRoles.Where(r => r is "NhanVien" or "HoTroChat"))
+                foreach (var currentRole in currentRoles.Where(r =>
+                    r is AppConstants.ROLE_STAFF or AppConstants.ROLE_CHAT_SUPPORT))
                 {
                     if (!string.Equals(currentRole, roleName, StringComparison.Ordinal))
                         await userMgr.RemoveFromRoleAsync(emp, currentRole);
@@ -107,18 +114,6 @@ namespace ShopMVC.Data
             }
 
             // ===== 2.1) Cấu hình động cho shop
-            await ctx.Database.ExecuteSqlRawAsync(@"
-IF OBJECT_ID(N'[SystemSettings]', N'U') IS NULL
-BEGIN
-    CREATE TABLE [SystemSettings](
-        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        [SettingKey] NVARCHAR(100) NOT NULL,
-        [SettingValue] NVARCHAR(1000) NULL,
-        [UpdatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE()
-    );
-    CREATE UNIQUE INDEX [IX_SystemSettings_SettingKey] ON [SystemSettings]([SettingKey]);
-END");
-
             var defaultShopName = string.IsNullOrWhiteSpace(shopOptions.Value.ShopName)
                 ? "ShopMVC"
                 : shopOptions.Value.ShopName.Trim();

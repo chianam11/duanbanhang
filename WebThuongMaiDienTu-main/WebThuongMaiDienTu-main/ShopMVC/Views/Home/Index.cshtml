@@ -147,12 +147,13 @@
             .ThenBy(a => a.ThuTu)
             .FirstOrDefault()?.Url ?? "/images/no-image.png";
 
-        var coGiam = p.GiaKhuyenMai.HasValue && p.GiaKhuyenMai.Value < p.Gia;
-        var giaShow = coGiam ? p.GiaKhuyenMai.Value : p.Gia;
+        var giaKhuyenMai = p.GiaKhuyenMai;
+        var coGiam = giaKhuyenMai.HasValue && giaKhuyenMai.Value < p.Gia;
+        var giaShow = coGiam ? giaKhuyenMai!.Value : p.Gia;
 
         // Tính % giảm, chỉ lấy phần nguyên và chỉ dùng nếu >= 1%
         decimal? rawPercent = coGiam
-        ? (p.Gia - p.GiaKhuyenMai.Value) * 100m / p.Gia
+        ? (p.Gia - giaKhuyenMai!.Value) * 100m / p.Gia
         : (decimal?)null;
 
         int? percent = null;

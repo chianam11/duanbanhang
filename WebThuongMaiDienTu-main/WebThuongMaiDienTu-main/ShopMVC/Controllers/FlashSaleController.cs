@@ -34,8 +34,8 @@ namespace ShopMVC.Controllers
 
             // 2. Lấy danh sách sản phẩm còn phân bổ
             var flashSaleItems = await _db.VoucherSanPhams
-                .Include(vp => vp.SanPham).ThenInclude(p => p.Anhs)
-                .Include(vp => vp.SanPham).ThenInclude(p => p.ChiTietSanPhams)
+                .Include(vp => vp.SanPham!).ThenInclude(p => p.Anhs)
+                .Include(vp => vp.SanPham!).ThenInclude(p => p.ChiTietSanPhams)
                 .Where(vp => vp.VoucherId == activeFlashSale.Id)
                 .Where(vp => vp.SanPham != null)
                 .Where(vp => vp.SoLuongPhanBo > vp.SoLuongDaBan) // còn hàng trong chương trình

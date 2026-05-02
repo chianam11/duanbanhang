@@ -36,7 +36,7 @@ namespace ShopMVC.Controllers.Api
 
             if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(p => p.Ten.Contains(search) || p.MoTaNgan.Contains(search));
+                query = query.Where(p => p.Ten.Contains(search) || (p.MoTaNgan != null && p.MoTaNgan.Contains(search)));
             }
 
             if (categoryId.HasValue)

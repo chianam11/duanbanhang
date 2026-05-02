@@ -187,8 +187,11 @@ namespace ShopMVC.Services
 
         public async Task<IEnumerable<ProductSalesViewModel>> GetTopSellingProductsAsync(int month, int year, int count = 10)
         {
-            var query = _db.DonHangChiTiets.Where(ct => ct.DonHang.TrangThai == TrangThaiDonHang.HoanTat && ct.DonHang.NgayCapNhat.Year == year);
-            if (month > 0) query = query.Where(ct => ct.DonHang.NgayCapNhat.Month == month);
+            var query = _db.DonHangChiTiets.Where(ct =>
+                ct.DonHang != null &&
+                ct.DonHang.TrangThai == TrangThaiDonHang.HoanTat &&
+                ct.DonHang.NgayCapNhat.Year == year);
+            if (month > 0) query = query.Where(ct => ct.DonHang != null && ct.DonHang.NgayCapNhat.Month == month);
 
             var topStats = await query.GroupBy(ct => ct.IdSanPham)
                 .Select(g => new { IdSanPham = g.Key, SoLuong = g.Sum(ct => ct.SoLuong), DoanhThu = g.Sum(ct => ct.ThanhTien) })

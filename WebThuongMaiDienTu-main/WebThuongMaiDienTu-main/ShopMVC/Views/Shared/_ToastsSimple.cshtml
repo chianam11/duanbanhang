@@ -3,10 +3,10 @@
     // Gom các thông báo từ TempData (không cần class)
     var msgs = new List<(string css, string text)>();
 
-    string ok = TempData["Ok"] as string;
-    string err = TempData["Err"] as string;
-    string info = TempData["Info"] as string;
-    string warn = TempData["Warn"] as string;
+    string? ok = TempData["Ok"] as string;
+    string? err = TempData["Err"] as string;
+    string? info = TempData["Info"] as string;
+    string? warn = TempData["Warn"] as string;
 
     if (!string.IsNullOrWhiteSpace(ok)) msgs.Add(("text-bg-success", ok));
     if (!string.IsNullOrWhiteSpace(err)) msgs.Add(("text-bg-danger", err));

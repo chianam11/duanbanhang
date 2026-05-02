@@ -9,6 +9,7 @@ namespace ShopMVC.Areas.Admin.Controllers
     public class ThuongHieuController : AdminBaseController
     {
         private readonly AppDbContext _db;
+
         public ThuongHieuController(AppDbContext db) => _db = db;
 
         public async Task<IActionResult> Index(int page = 1, int pageSize = 12, string? q = null, string sort = "name_asc")
@@ -20,7 +21,7 @@ namespace ShopMVC.Areas.Admin.Controllers
 
             if (!string.IsNullOrWhiteSpace(q))
             {
-                string kw = q.Trim();
+                var kw = q.Trim();
                 query = query.Where(x => x.Ten.Contains(kw));
             }
 
@@ -32,8 +33,8 @@ namespace ShopMVC.Areas.Admin.Controllers
                 _ => query.OrderBy(x => x.Ten)
             };
 
-            int total = await query.CountAsync();
-            int totalPages = (int)Math.Ceiling(total / (double)pageSize);
+            var total = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(total / (double)pageSize);
             if (totalPages == 0) totalPages = 1;
             if (page > totalPages) page = totalPages;
 
@@ -60,14 +61,17 @@ namespace ShopMVC.Areas.Admin.Controllers
         {
             NormalizeBrandInput(m);
 
-            if (!ModelState.IsValid) return View(m);
+            if (!ModelState.IsValid)
+            {
+                return View(m);
+            }
 
-            string name = m.Ten.ToLowerInvariant();
-            bool existed = await _db.ThuongHieus.AnyAsync(x => x.Ten.ToLower() == name);
+            var name = m.Ten.ToLowerInvariant();
+            var existed = await _db.ThuongHieus.AnyAsync(x => x.Ten.ToLower() == name);
 
             if (existed)
             {
-                ModelState.AddModelError(nameof(m.Ten), "Tên thương hiệu đã tồn tại.");
+                ModelState.AddModelError(nameof(m.Ten), "Ten thuong hieu da ton tai.");
                 return View(m);
             }
 
@@ -88,14 +92,17 @@ namespace ShopMVC.Areas.Admin.Controllers
         {
             NormalizeBrandInput(m);
 
-            if (!ModelState.IsValid) return View(m);
+            if (!ModelState.IsValid)
+            {
+                return View(m);
+            }
 
-            string name = m.Ten.ToLowerInvariant();
-            bool existed = await _db.ThuongHieus.AnyAsync(x => x.Id != m.Id && x.Ten.ToLower() == name);
+            var name = m.Ten.ToLowerInvariant();
+            var existed = await _db.ThuongHieus.AnyAsync(x => x.Id != m.Id && x.Ten.ToLower() == name);
 
             if (existed)
             {
-                ModelState.AddModelError(nameof(m.Ten), "Tên thương hiệu đã tồn tại.");
+                ModelState.AddModelError(nameof(m.Ten), "Ten thuong hieu da ton tai.");
                 return View(m);
             }
 
@@ -111,14 +118,14 @@ namespace ShopMVC.Areas.Admin.Controllers
             var th = await _db.ThuongHieus.FindAsync(id);
             if (th == null)
             {
-                TempData["Err"] = "Thương hiệu không tồn tại.";
+                TempData["Err"] = "Thuong hieu khong ton tai.";
                 return RedirectToAction(nameof(Index));
             }
 
-            bool inUse = await _db.SanPhams.AnyAsync(p => p.IdThuongHieu == id);
+            var inUse = await _db.SanPhams.AnyAsync(p => p.IdThuongHieu == id);
             if (inUse)
             {
-                TempData["Err"] = "Không thể xoá vì còn sản phẩm thuộc thương hiệu này. Hãy chuyển sang thương hiệu khác hoặc xoá sản phẩm trước.";
+                TempData["Err"] = "Khong the xoa vi con san pham thuoc thuong hieu nay. Hay chuyen sang thuong hieu khac hoac xoa san pham truoc.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -126,11 +133,11 @@ namespace ShopMVC.Areas.Admin.Controllers
             {
                 _db.ThuongHieus.Remove(th);
                 await _db.SaveChangesAsync();
-                TempData["Ok"] = "Đã xoá thương hiệu.";
+                TempData["Ok"] = "Da xoa thuong hieu.";
             }
             catch
             {
-                TempData["Err"] = "Xoá thất bại do ràng buộc dữ liệu.";
+                TempData["Err"] = "Xoa that bai do rang buoc du lieu.";
             }
 
             return RedirectToAction(nameof(Index));

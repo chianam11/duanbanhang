@@ -1,10 +1,8 @@
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using ShopMVC.Data;
 using ShopMVC.Models;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using ShopMVC.Services.Interfaces;
 
 namespace ShopMVC.Services
 {
@@ -22,7 +20,7 @@ namespace ShopMVC.Services
 
         public async Task<List<DanhMuc>> GetActiveCategoriesAsync()
         {
-            if (!_cache.TryGetValue(CategoriesCacheKey, out List<DanhMuc> categories))
+            if (!_cache.TryGetValue(CategoriesCacheKey, out List<DanhMuc>? categories) || categories is null)
             {
                 categories = await _context.DanhMucs
                     .Where(c => c.HienThi)
@@ -43,11 +41,5 @@ namespace ShopMVC.Services
         {
             _cache.Remove(CategoriesCacheKey);
         }
-    }
-
-    public interface ICategoryService
-    {
-        Task<List<DanhMuc>> GetActiveCategoriesAsync();
-        void ClearCategoriesCache();
     }
 }

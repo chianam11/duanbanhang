@@ -47,8 +47,10 @@ namespace ShopMVC.Controllers
             var from = to.AddDays(-30);
 
             var topIds = await _db.DonHangChiTiets
-                .Where(ct => ct.DonHang.TrangThai == Models.TrangThaiDonHang.HoanTat
-                          && ct.DonHang.NgayDat >= from && ct.DonHang.NgayDat <= to)
+                .Where(ct => ct.DonHang != null
+                          && ct.DonHang.TrangThai == Models.TrangThaiDonHang.HoanTat
+                          && ct.DonHang.NgayDat >= from
+                          && ct.DonHang.NgayDat <= to)
                 .GroupBy(ct => ct.IdSanPham)
                 .Select(g => new { Id = g.Key, Qty = g.Sum(x => x.SoLuong) })
                 .OrderByDescending(x => x.Qty)

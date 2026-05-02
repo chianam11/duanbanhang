@@ -85,7 +85,13 @@ namespace ShopMVC.Services
                 var port = int.Parse(smtpSettings["Port"] ?? "587");
                 var username = smtpSettings["Username"];
                 var password = smtpSettings["Password"];
-                var fromEmail = smtpSettings["FromEmail"];
+                var fromEmail = smtpSettings["FromEmail"] ?? username;
+
+                if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(fromEmail))
+                {
+                    _logger.LogWarning("SMTP settings are incomplete. Skipping email send.");
+                    return;
+                }
 
                 using (var client = new SmtpClient(host, port))
                 {
@@ -100,7 +106,7 @@ namespace ShopMVC.Services
                     };
 
                     await client.SendMailAsync(mailMessage);
-                    _logger.LogInformation($"Email sent to {to}: {subject}");
+                    _logger.LogInformation("Email sent to {To}: {Subject}", to, subject);
                 }
             }
             catch (Exception ex)

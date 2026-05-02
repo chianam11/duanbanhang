@@ -15,7 +15,7 @@
     // nếu các biến thể có trường Mau => coi như đang chọn màu
     bool hasColor = hasVariants && (
         !string.IsNullOrWhiteSpace(p.Mau) ||
-        Model.Siblings.Any(s => !string.IsNullOrWhiteSpace(s.Mau))
+        Model.Siblings?.Any(s => !string.IsNullOrWhiteSpace(s.Mau)) == true
     );
     string variantTitle = hasColor ? "Chọn màu" : "Chọn biến thể";
 }
@@ -76,7 +76,7 @@
                     <div class="mb-3">
                         <div class="label">@variantTitle</div>
                         <div class="d-flex flex-wrap gap-2">
-                            @foreach (var s in Model.Siblings)  @* HIỂN THỊ CẢ CHA + TẤT CẢ ANH EM *@
+                            @foreach (var s in Model.Siblings ?? Enumerable.Empty<ShopMVC.Models.SanPham>())  @* HIỂN THỊ CẢ CHA + TẤT CẢ ANH EM *@
                             {
                                 var isActive = s.Id == p.Id;
                                 var label = !string.IsNullOrWhiteSpace(s.Mau) ? s.Mau!.Trim() : (s.Ten ?? "").Trim();

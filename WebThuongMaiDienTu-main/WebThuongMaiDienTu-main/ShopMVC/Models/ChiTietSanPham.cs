@@ -11,12 +11,12 @@ namespace ShopMVC.Models
         // Liên kết với bảng sản phẩm cha
         public int SanPhamId { get; set; }
         [ForeignKey("SanPhamId")]
-        public virtual SanPham SanPham { get; set; }
+        public virtual SanPham SanPham { get; set; } = new();
 
         // Các thuộc tính biến thể (Màu, Size...)
         // Bạn có thể sửa tên tùy theo ý định (VD: MauSac, KichThuoc)
         [Display(Name = "Kích thước/Màu sắc")]
-        public string TenChiTiet { get; set; }
+        public string TenChiTiet { get; set; } = string.Empty;
 
         // QUAN TRỌNG: Phải có giá ở đây để code trước đó tính toán được
         [Column(TypeName = "decimal(18,2)")]

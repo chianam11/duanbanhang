@@ -29,11 +29,12 @@ namespace ShopMVC.Controllers
             var chiTietDon = await _db.DonHangChiTiets
                 .FirstOrDefaultAsync(ct => ct.IdDonHang == idDonHang
                     && ct.IdSanPham == idSanPham
+                    && ct.DonHang != null
                     && ct.DonHang.UserId == userId);
 
             if (chiTietDon == null)
             {
-                TempData["error"] = "Không tìm thấy sản phẩm trong đơn hàng của bạn.";
+                TempData["error"] = "Khong tim thay san pham trong don hang cua ban.";
                 return RedirectToAction("CuaToi", "DonHang");
             }
 
@@ -44,7 +45,7 @@ namespace ShopMVC.Controllers
 
             if (daDanhGia)
             {
-                TempData["error"] = "Bạn đã đánh giá sản phẩm này cho đơn hàng này rồi.";
+                TempData["error"] = "Ban da danh gia san pham nay cho don hang nay roi.";
                 return RedirectToAction("ChiTiet", "DonHang", new { id = idDonHang });
             }
 
@@ -53,7 +54,10 @@ namespace ShopMVC.Controllers
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == idSanPham);
 
-            if (sanPham == null) return NotFound();
+            if (sanPham == null)
+            {
+                return NotFound();
+            }
 
             var vm = new DanhGiaVM
             {
@@ -78,14 +82,19 @@ namespace ShopMVC.Controllers
             vm.NoiDung = string.IsNullOrWhiteSpace(vm.NoiDung) ? null : vm.NoiDung.Trim();
 
             if (!FileUploadValidation.IsValidImage(vm.FileHinhAnh, out var imageError, maxSizeInMb: 5))
+            {
                 ModelState.AddModelError(nameof(vm.FileHinhAnh), imageError);
+            }
 
             var chiTietDon = await _db.DonHangChiTiets
                 .FirstOrDefaultAsync(ct => ct.IdDonHang == vm.IdDonHang
                     && ct.IdSanPham == vm.IdSanPham
+                    && ct.DonHang != null
                     && ct.DonHang.UserId == userId);
             if (chiTietDon == null)
+            {
                 return Forbid();
+            }
 
             if (!ModelState.IsValid)
             {
@@ -103,6 +112,7 @@ namespace ShopMVC.Controllers
                         .Select(a => a.Url)
                         .FirstOrDefault();
                 }
+
                 return View(vm);
             }
 
@@ -120,24 +130,25 @@ namespace ShopMVC.Controllers
 
             if (vm.FileHinhAnh != null && vm.FileHinhAnh.Length > 0)
             {
-                string uploadsDir = Path.Combine(_hostEnv.WebRootPath, "uploads", "reviews");
+                var uploadsDir = Path.Combine(_hostEnv.WebRootPath, "uploads", "reviews");
                 Directory.CreateDirectory(uploadsDir);
 
-                string safeName = Path.GetFileName(vm.FileHinhAnh.FileName);
-                string uniqueFileName = $"{Guid.NewGuid()}_{safeName}";
-                string filePath = Path.Combine(uploadsDir, uniqueFileName);
+                var safeName = Path.GetFileName(vm.FileHinhAnh.FileName);
+                var uniqueFileName = $"{Guid.NewGuid()}_{safeName}";
+                var filePath = Path.Combine(uploadsDir, uniqueFileName);
 
                 using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
                     await vm.FileHinhAnh.CopyToAsync(fileStream);
                 }
+
                 danhGia.HinhAnh = "/uploads/reviews/" + uniqueFileName;
             }
 
             _db.DanhGias.Add(danhGia);
             await _db.SaveChangesAsync();
 
-            TempData["success"] = "Gửi đánh giá thành công! Đánh giá của bạn đang chờ duyệt.";
+            TempData["success"] = "Gui danh gia thanh cong. Danh gia cua ban dang cho duyet.";
             return RedirectToAction("ChiTiet", "DonHang", new { id = vm.IdDonHang });
         }
     }

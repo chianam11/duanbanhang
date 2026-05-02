@@ -30,17 +30,20 @@ namespace ShopMVC.Areas.Admin.Controllers
             NormalizeCategoryInput(m);
             ValidateIcon(icon);
 
-            if (!ModelState.IsValid) return View(m);
+            if (!ModelState.IsValid)
+            {
+                return View(m);
+            }
 
             var name = m.Ten.ToLowerInvariant();
             var slug = (m.Slug ?? string.Empty).ToLowerInvariant();
 
-            bool existed = await _db.DanhMucs
+            var existed = await _db.DanhMucs
                 .AnyAsync(x => x.Ten.ToLower() == name || (!string.IsNullOrEmpty(slug) && x.Slug != null && x.Slug.ToLower() == slug));
 
             if (existed)
             {
-                ModelState.AddModelError(nameof(m.Ten), "Tên hoặc slug danh mục đã tồn tại.");
+                ModelState.AddModelError(nameof(m.Ten), "Ten hoac slug danh muc da ton tai.");
                 return View(m);
             }
 
@@ -74,17 +77,20 @@ namespace ShopMVC.Areas.Admin.Controllers
             NormalizeCategoryInput(m);
             ValidateIcon(icon);
 
-            if (!ModelState.IsValid) return View(m);
+            if (!ModelState.IsValid)
+            {
+                return View(m);
+            }
 
             var name = m.Ten.ToLowerInvariant();
             var slug = (m.Slug ?? string.Empty).ToLowerInvariant();
 
-            bool existed = await _db.DanhMucs
+            var existed = await _db.DanhMucs
                 .AnyAsync(x => x.Id != m.Id && (x.Ten.ToLower() == name || (!string.IsNullOrEmpty(slug) && x.Slug != null && x.Slug.ToLower() == slug)));
 
             if (existed)
             {
-                ModelState.AddModelError(nameof(m.Ten), "Tên hoặc slug danh mục đã tồn tại.");
+                ModelState.AddModelError(nameof(m.Ten), "Ten hoac slug danh muc da ton tai.");
                 return View(m);
             }
 
@@ -112,21 +118,21 @@ namespace ShopMVC.Areas.Admin.Controllers
             var dm = await _db.DanhMucs.FindAsync(id);
             if (dm == null)
             {
-                TempData["Error"] = "Danh mục không tồn tại.";
+                TempData["Error"] = "Danh muc khong ton tai.";
                 return RedirectToAction(nameof(Index));
             }
 
-            bool hasProducts = await _db.SanPhams.AnyAsync(p => p.IdDanhMuc == id);
+            var hasProducts = await _db.SanPhams.AnyAsync(p => p.IdDanhMuc == id);
             if (hasProducts)
             {
-                TempData["Error"] = "Danh mục đang có sản phẩm, không thể xoá. Hãy chuyển sản phẩm sang danh mục khác hoặc xoá sản phẩm trước.";
+                TempData["Error"] = "Danh muc dang co san pham, khong the xoa. Hay chuyen san pham sang danh muc khac hoac xoa san pham truoc.";
                 return RedirectToAction(nameof(Index));
             }
 
             _db.DanhMucs.Remove(dm);
             await _db.SaveChangesAsync();
 
-            TempData["Success"] = "Đã xoá danh mục.";
+            TempData["Success"] = "Da xoa danh muc.";
             return RedirectToAction(nameof(Index));
         }
 

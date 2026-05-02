@@ -11,7 +11,12 @@ namespace ShopMVC.Areas.Admin.Controllers
     {
         private readonly AppDbContext _db;
         private readonly IWebHostEnvironment _env;
-        public SanPhamController(AppDbContext db, IWebHostEnvironment env) { _db = db; _env = env; }
+
+        public SanPhamController(AppDbContext db, IWebHostEnvironment env)
+        {
+            _db = db;
+            _env = env;
+        }
 
         private void LoadSelects()
         {
@@ -20,11 +25,11 @@ namespace ShopMVC.Areas.Admin.Controllers
 
             ViewBag.Parents = new SelectList(
                 _db.SanPhams
-                   .Where(p => p.ParentId == null)
-                   .OrderBy(p => p.Ten)
-                   .Select(p => new { p.Id, Ten = p.Ten }),
-                "Id", "Ten"
-            );
+                    .Where(p => p.ParentId == null)
+                    .OrderBy(p => p.Ten)
+                    .Select(p => new { p.Id, Ten = p.Ten }),
+                "Id",
+                "Ten");
         }
 
         public async Task<IActionResult> Index(int page = 1, int pageSize = 15, bool includeVariants = false)
@@ -35,17 +40,19 @@ namespace ShopMVC.Areas.Admin.Controllers
             IQueryable<SanPham> q = _db.SanPhams.AsNoTracking();
 
             if (!includeVariants)
+            {
                 q = q.Where(p => p.ParentId == null).Include(p => p.Children);
+            }
 
             q = q
                 .Include(p => p.Anhs)
                 .Include(p => p.Parent)
-                    .ThenInclude(pa => pa.Anhs)
+                    .ThenInclude(pa => pa!.Anhs)
                 .Include(p => p.DanhMuc)
                 .Include(p => p.ThuongHieu);
 
-            int total = await q.CountAsync();
-            int totalPages = (int)Math.Ceiling(total / (double)pageSize);
+            var total = await q.CountAsync();
+            var totalPages = (int)Math.Ceiling(total / (double)pageSize);
             if (totalPages == 0) totalPages = 1;
             if (page > totalPages) page = totalPages;
 
@@ -81,7 +88,9 @@ namespace ShopMVC.Areas.Admin.Controllers
             {
                 var parentExists = await _db.SanPhams.AnyAsync(x => x.Id == m.ParentId && x.ParentId == null);
                 if (!parentExists)
-                    ModelState.AddModelError(nameof(m.ParentId), "Nhóm (cha) không hợp lệ hoặc không tồn tại.");
+                {
+                    ModelState.AddModelError(nameof(m.ParentId), "Nhom (cha) khong hop le hoac khong ton tai.");
+                }
             }
 
             if (!ModelState.IsValid)
@@ -95,7 +104,7 @@ namespace ShopMVC.Areas.Admin.Controllers
             await _db.SaveChangesAsync();
 
             await SaveImagesAsync(m.Id, files);
-            TempData["toast"] = "Đã thêm sản phẩm mới.";
+            TempData["toast"] = "Da them san pham moi.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -117,13 +126,18 @@ namespace ShopMVC.Areas.Admin.Controllers
             NormalizeProductInput(m);
             ValidateProductFiles(files);
 
-            if (m.ParentId == m.Id) m.ParentId = null;
+            if (m.ParentId == m.Id)
+            {
+                m.ParentId = null;
+            }
 
             if (m.ParentId.HasValue)
             {
                 var parent = await _db.SanPhams.FirstOrDefaultAsync(x => x.Id == m.ParentId && x.ParentId == null);
                 if (parent == null)
-                    ModelState.AddModelError(nameof(m.ParentId), "Nhóm (cha) không hợp lệ hoặc không tồn tại.");
+                {
+                    ModelState.AddModelError(nameof(m.ParentId), "Nhom (cha) khong hop le hoac khong ton tai.");
+                }
             }
 
             if (!ModelState.IsValid)
@@ -138,7 +152,7 @@ namespace ShopMVC.Areas.Admin.Controllers
             await _db.SaveChangesAsync();
             await SaveImagesAsync(m.Id, files);
 
-            TempData["toast"] = "Đã lưu sản phẩm thành công.";
+            TempData["toast"] = "Da luu san pham thanh cong.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -151,20 +165,26 @@ namespace ShopMVC.Areas.Admin.Controllers
                 .Include(p => p.Anhs)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (sp == null) return RedirectToAction(nameof(Index));
-
-            if (sp.ParentId == null && sp.Children.Any())
+            if (sp == null)
             {
-                TempData["Err"] = "Không thể xoá sản phẩm CHA khi vẫn còn biến thể. Hãy xoá/di chuyển các biến thể trước.";
                 return RedirectToAction(nameof(Index));
             }
 
-            foreach (var a in sp.Anhs) TryDeleteFile(a.Url);
+            if (sp.ParentId == null && sp.Children.Any())
+            {
+                TempData["Err"] = "Khong the xoa san pham cha khi van con bien the. Hay xoa hoac di chuyen cac bien the truoc.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            foreach (var a in sp.Anhs)
+            {
+                TryDeleteFile(a.Url);
+            }
 
             _db.SanPhams.Remove(sp);
             await _db.SaveChangesAsync();
 
-            TempData["Ok"] = "Đã xoá sản phẩm.";
+            TempData["Ok"] = "Da xoa san pham.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -178,6 +198,7 @@ namespace ShopMVC.Areas.Admin.Controllers
                 _db.AnhSanPhams.Remove(a);
                 await _db.SaveChangesAsync();
             }
+
             return Redirect(Request.Headers["Referer"].ToString());
         }
 
@@ -186,6 +207,7 @@ namespace ShopMVC.Areas.Admin.Controllers
         {
             var a = await _db.AnhSanPhams.FindAsync(id);
             if (a == null) return NotFound();
+
             var anhs = _db.AnhSanPhams.Where(x => x.IdSanPham == a.IdSanPham);
             await anhs.ForEachAsync(x => x.LaAnhChinh = false);
             a.LaAnhChinh = true;
@@ -209,7 +231,7 @@ namespace ShopMVC.Areas.Admin.Controllers
             ValidateProductFiles(files);
             if (!ModelState.IsValid)
             {
-                TempData["Err"] = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage ?? "Ảnh tải lên không hợp lệ.";
+                TempData["Err"] = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage ?? "Anh tai len khong hop le.";
                 return RedirectToAction(nameof(Images), new { id });
             }
 
@@ -219,7 +241,7 @@ namespace ShopMVC.Areas.Admin.Controllers
             var uploadRoot = Path.Combine(_env.WebRootPath, "uploads", "products");
             Directory.CreateDirectory(uploadRoot);
 
-            int nextOrder = p.Anhs.Any() ? p.Anhs.Max(a => a.ThuTu) + 1 : 0;
+            var nextOrder = p.Anhs.Any() ? p.Anhs.Max(a => a.ThuTu) + 1 : 0;
 
             foreach (var f in files.Where(f => f?.Length > 0))
             {
@@ -227,7 +249,9 @@ namespace ShopMVC.Areas.Admin.Controllers
                 var fileName = $"{Guid.NewGuid():N}{ext}";
                 var savePath = Path.Combine(uploadRoot, fileName);
                 await using (var stream = System.IO.File.Create(savePath))
+                {
                     await f.CopyToAsync(stream);
+                }
 
                 var relUrl = $"/uploads/products/{fileName}";
                 _db.AnhSanPhams.Add(new AnhSanPham
@@ -250,9 +274,12 @@ namespace ShopMVC.Areas.Admin.Controllers
             var p = await _db.SanPhams.Include(x => x.Anhs).FirstOrDefaultAsync(x => x.Id == id);
             if (p == null) return NotFound();
 
-            foreach (var a in p.Anhs) a.LaAnhChinh = a.Id == imageId;
-            await _db.SaveChangesAsync();
+            foreach (var a in p.Anhs)
+            {
+                a.LaAnhChinh = a.Id == imageId;
+            }
 
+            await _db.SaveChangesAsync();
             return RedirectToAction(nameof(Images), new { id });
         }
 
@@ -288,7 +315,7 @@ namespace ShopMVC.Areas.Admin.Controllers
             var idx = list.FindIndex(a => a.Id == imageId);
             if (idx == -1) return RedirectToAction(nameof(Images), new { id });
 
-            int swapWith = dir == "up" ? idx - 1 : idx + 1;
+            var swapWith = dir == "up" ? idx - 1 : idx + 1;
             if (swapWith < 0 || swapWith >= list.Count) return RedirectToAction(nameof(Images), new { id });
 
             (list[idx].ThuTu, list[swapWith].ThuTu) = (list[swapWith].ThuTu, list[idx].ThuTu);
@@ -304,8 +331,8 @@ namespace ShopMVC.Areas.Admin.Controllers
             var dir = Path.Combine(_env.WebRootPath, "uploads", "products");
             Directory.CreateDirectory(dir);
 
-            bool first = !await _db.AnhSanPhams.AnyAsync(x => x.IdSanPham == spId);
-            int order = (await _db.AnhSanPhams
+            var first = !await _db.AnhSanPhams.AnyAsync(x => x.IdSanPham == spId);
+            var order = (await _db.AnhSanPhams
                 .Where(x => x.IdSanPham == spId)
                 .Select(x => (int?)x.ThuTu)
                 .MaxAsync()) ?? 0;
@@ -316,7 +343,9 @@ namespace ShopMVC.Areas.Admin.Controllers
                 var fileName = $"{Guid.NewGuid():N}{ext}";
                 var savePath = Path.Combine(dir, fileName);
                 await using (var stream = System.IO.File.Create(savePath))
+                {
                     await f.CopyToAsync(stream);
+                }
 
                 var url = $"/uploads/products/{fileName}";
                 _db.AnhSanPhams.Add(new AnhSanPham
@@ -328,6 +357,7 @@ namespace ShopMVC.Areas.Admin.Controllers
                 });
                 first = false;
             }
+
             await _db.SaveChangesAsync();
         }
 
